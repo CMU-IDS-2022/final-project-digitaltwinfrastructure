@@ -17,3 +17,11 @@ Water companies, utilities and boards worldwide have the crucial responsibility 
 **2. Operations of water network**
 - Water network operations is a huge task
 - Operation of water infrastructure is done in different scales depending on the decision that the operator is trying to make. Some tasks require a complete view of the water network in a city-scale. On the other hand, some tasks need more local information such as total annual consumption and trends on zone level. Therefore, any dashboard provided for water network operators should be able to summarize the information on different levels of detail.
+
+**Project Scope and Assumptions**
+- Developing a dashboard that helps operators/utilities understand water consumption trends, identify critical pipes that need replacement or rehabilitation, and identify the customers that will be affected due to repair work.  It ultimately helps stakeholders to prevent or minimize water outage.
+- Limited to a small city “Watertown, Connecticut” but it could be replicated for any water network.
+- The ‘5 year (2015-2021) pipe break historical data’ and ‘3 year (2019-2022) customer billing data’ for Watertown is provided by Bentley Systems Inc. 
+- The physical model of the water network is assumed unchanged because of any modification to the digital model. 
+- Water Auditing by tallying how much water is pumped, stored, and consumed. 
+- Considering population growth over years and correlating it with the rate of change in water demands. We are not considering new buildings being constructed in the future. (at this stage, we have not finalized on whether to add this to the scope or not).
