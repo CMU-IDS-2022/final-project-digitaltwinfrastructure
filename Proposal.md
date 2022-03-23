@@ -25,3 +25,15 @@ Water companies, utilities and boards worldwide have the crucial responsibility 
 - The physical model of the water network is assumed unchanged because of any modification to the digital model. 
 - Water Auditing by tallying how much water is pumped, stored, and consumed. 
 - Considering population growth over years and correlating it with the rate of change in water demands. We are not considering new buildings being constructed in the future. (at this stage, we have not finalized on whether to add this to the scope or not).
+
+**Proposed Solution**
+
+**Maintenance Dashboard:**
+- The historical data of pipe breakage for 3 years, along with other important independent variables viz., age (year of installation), material, and diameter of pipes, internal water pressures, volume of water in the pipes can be consumed to learn and train a ML model to identify potentially critical pipes that need immediate attention or replacement and predict future breaks on pipes. 
+- **Visualization:** The dashboard comprises the GIS enabled aerial map of Watertown that shows the water network elements such as pipes, tanks, pumps, valves, etc. It is going to be an interactive map that allows users to zoom in and out, select, navigate etc. in order to gain knowledge about the past, current and future status of pipelines in the network using a slider. 
+
+**Operations Dashboard:**
+On the operator side, the trend of water consumption is used as a benchmark to predict the future trends of water consumption of the city. This dashboard can provide the operator with insights about the trending water consumption on a meter, zone, and city level. It will also help the operators to correlate the city’s water consumption with other equally important factors like climate (temperature, etc.), population density or growth, etc.
+- **Visualization:** The dashboard will have a GIS map showing different zones of the city, and water network assets. The user will be able to interact with the map. There will be bar charts showing the monthly consumption depending on the level which the user selects (i.e., meter level, zone level, or entire city). Similarly there will be time series charts that would show historical trends of consumption and the predicted consumption, etc. There would be sliders, check boxes, etc. to facilitate the user interact with the application as needed. Broadly speaking, a few sketches have been attached to this writeup to best express our thoughts and ideas as of today.
+
+
