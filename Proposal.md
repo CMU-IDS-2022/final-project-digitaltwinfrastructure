@@ -36,4 +36,11 @@ Water companies, utilities and boards worldwide have the crucial responsibility 
 - On the operator side, the trend of water consumption is used as a benchmark to predict the future trends of water consumption of the city. This dashboard can provide the operator with insights about the trending water consumption on a meter, zone, and city level. It will also help the operators to correlate the city’s water consumption with other equally important factors like climate (temperature, etc.), population density or growth, etc.
 - **Visualization:** The dashboard will have a GIS map showing different zones of the city, and water network assets. The user will be able to interact with the map. There will be bar charts showing the monthly consumption depending on the level which the user selects (i.e., meter level, zone level, or entire city). Similarly there will be time series charts that would show historical trends of consumption and the predicted consumption, etc. There would be sliders, check boxes, etc. to facilitate the user interact with the application as needed. Broadly speaking, a few sketches have been attached to this writeup to best express our thoughts and ideas as of today.
 
-DraftSketch_1.jpeg
+Sketch 1
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/12e280a92d0c346b5a4f7a6c21d0427d4829a51a/DraftSketch_1.jpeg)
+
+Sketch 2
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/40662ec9d13dacd70164afd64ec3aa911efbb6d1/DraftSketch_2.jpeg)
+
+Sketch 3
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/40662ec9d13dacd70164afd64ec3aa911efbb6d1/DraftSketch_3.jpeg)
