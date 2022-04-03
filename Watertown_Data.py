@@ -1,28 +1,24 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Apr  2 10:02:55 2022
-@author: Tanay
-"""
-
 import numpy as np
 import pandas as pd
+import streamlit as st
+import base64
 
+#Functions
+def create_onedrive_directdownload (onedrive_link):
+    data_bytes64 = base64.b64encode(bytes(onedrive_link, 'utf-8'))
+    data_bytes64_String = data_bytes64.decode('utf-8').replace('/','_').replace('+','-').rstrip("=")
+    resultUrl = f"https://api.onedrive.com/v1.0/shares/u!{data_bytes64_String}/root/content"
+    return resultUrl
 
-#df = pd.read_table("C:/Users/Tanay/Desktop/GIS Data From TWalski/SCADA.txt", header = None)
-#print(df.head())
+@st.cache
+def load(url):
+    return pd.read_csv(create_onedrive_directdownload(url))
 
-import pyodbc
-print("opening db...")
+#Main Code
 
-conn_string = (
-    r"Driver={Microsoft Access Driver (*.mdb, *.accdb)};"
-    r"DBQ=C:\Users\Tanay\Desktop\GIS Data From TWalski\SCADA.accdb;"
-    )
+st.header("Watertown Water Network")
+df = load("https://1drv.ms/u/s!AnhaxtVMqKpxgoV60EUsXBEpQ-YQUA?e=BGYuTT")
+print("Reading dataset...")
 
-conn = pyodbc.connect(conn_string)
-print("selecting...")
-sql = "Select * From SCADA"
-data = pd.read_sql(sql, conn)
-print(data.head())
-
-conn.close()
+if st.checkbox("Show Raw Data"):
+    st.write(df)
