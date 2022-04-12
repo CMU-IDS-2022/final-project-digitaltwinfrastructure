@@ -101,7 +101,7 @@ if option_1:
     selection = alt.selection_multi(fields=['Tank_Name'], bind='legend')
 
     # scatterplot showing the correlation between two features for all genres
-    scatterplot = alt.Chart(df1).mark_line().encode(
+    Water_Level_Line_Chart = alt.Chart(df1).mark_line().encode(
         alt.X('Time', scale=alt.Scale(zero=False)),
         alt.Y('Water_Level', scale=alt.Scale(zero=False)),
         alt.Color('Tank_Name:N', legend=alt.Legend(title="Tank Name")),
@@ -112,7 +112,64 @@ if option_1:
     ).interactive().add_selection(
         selection
     )
-    st.write(scatterplot)
+    st.write(Water_Level_Line_Chart)
+
+if option_2:
+    df2 = df[['Time', 'Bald Hill Tank_Net_Flow_Out_gpm', 'PRV-1_Flow_gpm',
+              'PRV-2_Flow_gpm', 'PRV-3_Flow_gpm', 'PRV-4_Flow_gpm', 'PRV-5_Flow_gpm',
+              'PRV-6_Flow_gpm', 'PRV-7_Flow_gpm', 'School_Flow_gpm', 'Well PMP-1_Flow_gpm',
+              'Well PMP-2_Flow_gpm','Well PMP-3_Flow_gpm', 'Well Station Discharge_Flow_gpm',
+              'WTP PMP-1_Flow_gpm', 'WTP PMP-2_Flow_gpm', 'WTP PMP-3_Flow_gpm',
+              'WTP Station Discharge_Flow_gpm']].melt('Time', var_name='Asset', value_name='Flow')
+    # brush (click and drag) for selecting specific values on chart
+    #brush = alt.selection_interval(encodings=["x"])
+
+    # selection to allow highlight of genre when click on legend
+    selection = alt.selection_multi(fields=['Asset'], bind='legend')
+
+    # scatterplot showing the correlation between two features for all genres
+    Flow_Line_Chart = alt.Chart(df2).mark_line().encode(
+        alt.X('Time', scale=alt.Scale(zero=False)),
+        alt.Y('Flow', scale=alt.Scale(zero=False)),
+        alt.Color('Asset:N', legend=alt.Legend(title="Asset")),
+        opacity=alt.condition(selection, alt.value(1), alt.value(0.2)),
+        tooltip=['Time', 'Asset', 'Flow']
+    ).properties(
+        width=650, height=350
+    ).interactive().add_selection(
+        selection
+    )
+    st.write(Flow_Line_Chart)
+
+if option_3:
+    df3 = df[['Time', 'PRV-1_FromPressure_psi', 'PRV-2_FromPressure_psi', 'PRV-3_FromPressure_psi',
+              'PRV-4_FromPressure_psi', 'PRV-5_FromPressure_psi', 'PRV-6_FromPressure_psi', 'PRV-7_FromPressure_psi',
+              'PRV-1_ToPressure_psi', 'PRV-2_ToPressure_psi', 'PRV-3_ToPressure_psi','PRV-4_ToPressure_psi',
+              'PRV-5_ToPressure_psi', 'PRV-6_ToPressure_psi', 'PRV-7_ToPressure_psi', 'Well Discharge_Pressure_psi',
+              'Well PMP-1_DischargePressure_psi', 'Well PMP-1_SuctionPressure_psi',
+              'Well PMP-2_DischargePressure_psi', 'Well PMP-2_SuctionPressure_psi',
+              'Well PMP-3_DischargePressure_psi', 'Well PMP-3_SuctionPressure_psi',
+              'Well Suction_Pressure_psi', 'WTP Discharge_Pressure_psi', 'WTP Suction_Pressure_psi', 'WTP PMP-1_SuctionPressure_psi', 'WTP PMP-2_SuctionPressure_psi',
+              'WTP PMP-3_SuctionPressure_psi']].melt('Time', var_name='Asset', value_name='Pressure')
+    # brush (click and drag) for selecting specific values on chart
+    #brush = alt.selection_interval(encodings=["x"])
+
+    # selection to allow highlight of genre when click on legend
+    selection = alt.selection_multi(fields=['Asset'], bind='legend')
+
+    # scatterplot showing the correlation between two features for all genres
+    Pressure_Line_Chart = alt.Chart(df3).mark_line().encode(
+        alt.X('Time', scale=alt.Scale(zero=False)),
+        alt.Y('Pressure', scale=alt.Scale(zero=False)),
+        alt.Color('Asset:N', legend=alt.Legend(title="Asset")),
+        opacity=alt.condition(selection, alt.value(1), alt.value(0.2)),
+        tooltip=['Time', 'Asset', 'Pressure']
+    ).properties(
+        width=650, height=350
+    ).interactive().add_selection(
+        selection
+    )
+    st.write(Pressure_Line_Chart)
 
 # Create Radio Buttons
 #start_date = st.date_input('Start date', default_start_day)
