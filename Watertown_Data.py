@@ -5,6 +5,8 @@ import base64
 import altair as alt
 import datetime
 
+st.set_page_config(layout="wide")
+
 #Functions
 def create_onedrive_directdownload (onedrive_link):
     data_bytes64 = base64.b64encode(bytes(onedrive_link, 'utf-8'))
@@ -19,68 +21,100 @@ def load(url):
     df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
     return df
 
-#Main Code
-
-st.header("Watertown Water Network")
-df = load("https://1drv.ms/u/s!AnhaxtVMqKpxgoYMvc0XlCSMCQcHYQ?e=NGl6vK")
-
-if st.checkbox("Show Raw Data"):
-    with st.spinner('Writing in progress...'):
-        st.write(df)
-    st.success('Done!')
-
-st.title('Choose date range of data: ')
-
-col1, col2 = st.columns((1, 1))
-
-ymd_range = [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)]
-
 def set_default():
     if not (ymd_range[0]):
         ymd_range[0] = datetime.date(2019, 1, 1)
     elif not (ymd_range[1]):
         ymd_range[1] = datetime.date(2023, 12, 31)
 
-with col1:
-    ymd_range_temp = st.date_input("Start Day - End Day", [datetime.date(2019, 1, 1), datetime.date(2020, 1, 1)], min_value=datetime.date(2019, 1, 1), max_value=datetime.date(2023, 12, 31), on_change= set_default())
+#Main Code
+df = load("https://1drv.ms/u/s!AnhaxtVMqKpxgoYMvc0XlCSMCQcHYQ?e=NGl6vK")
 
-if (len(ymd_range_temp) == 2):
-    ymd_range = ymd_range_temp
-else:
-    st.error('Error: You must choose an end date. Otherwise, the default value for the end date is used for filtering the data.')
+from streamlit_option_menu import option_menu
 
-with col2:
-    hms_start_day = st.time_input("Time of Start Day", datetime.time(8, 45))
-    hms_end_day = st.time_input("Time of End Day", datetime.time(8, 30))
+with st.sidebar:
+    selected = option_menu("Main Menu", ["Home", 'Settings'],
+        icons=['house', 'gear'], menu_icon="cast", default_index=1)
 
-start_datetime = datetime.datetime.combine(ymd_range[0], hms_start_day)
-end_datetime = datetime.datetime.combine(ymd_range[1], hms_end_day)
+st.header("Watertown Water Network")
 
-start_datetime_str = start_datetime.strftime("%m/%d/%Y, %H:%M:%S")
-end_datetime_str = end_datetime.strftime("%m/%d/%Y, %H:%M:%S")
-st.success('Selected time span starts from `%s` until `%s`' %(start_datetime_str, end_datetime_str))
+if st.checkbox("Show Raw Data"):
+    with st.spinner('Writing in progress...'):
+        st.write(df)
+    st.success('Done!')
 
-#st.write('Selected time span starts from ', start_datetime, 'until', end_datetime)
-mask = ((df['Time'] > np.datetime64(start_datetime)) & (df['Time'] <= np.datetime64(end_datetime)))
-df = df.loc[mask]
+col1, col2 = st.columns((2, 2))
 
-chart = alt.Chart(df).mark_line(tooltip=True).encode(
-    y=alt.Y('Bald Hill Tank_Level_ft',
-            axis=alt.Axis(title='Bald Hill Tank_Level_ft'),
-            scale=alt.Scale(domain=(60, 100))),
-    x=alt.X('Time',
-            axis=alt.Axis(title='Date/Time'),
-            scale=alt.Scale(zero=False),
-            ),
-    tooltip=['Bald Hill Tank_Level_ft', 'Time']
-).properties(
-    width=710,
-    height=400,
-    title=""
-).interactive()
+ymd_range = [datetime.date(2019, 1, 1), datetime.date(2019, 1, 2)]
 
-st.write(chart)
+#with col1:
+#if selected == 'Settings':
+with st.sidebar:
+    #if(st.button('Settings')):
+    st.subheader('Choose date range of data:')
+    ymd_range_temp = st.date_input("Start Day - End Day", [datetime.date(2019, 1, 1), datetime.date(2019, 1, 2)], min_value=datetime.date(2019, 1, 1), max_value=datetime.date(2023, 12, 31), on_change= set_default())
+    if (len(ymd_range_temp) == 2):
+        ymd_range = ymd_range_temp
+    else:
+        st.error('Error: You must choose an end date. Otherwise, the default value for the end date is used for filtering the data.')
+    col1, col2 = st.columns((1, 1))
 
+    with col1:
+        hms_start_day = st.time_input("Time of Start Day", datetime.time(8, 45))
+
+    with col2:
+        hms_end_day = st.time_input("Time of End Day", datetime.time(8, 30))
+
+    st.subheader('Select variables of charts:')
+    option_1 = st.checkbox('Water level')
+    water_level_unit = st.selectbox("Choose unit:", ["meter", "foot"])
+    #if option_1:
+
+    option_2 = st.checkbox('Flow')
+    flow_unit = st.selectbox("Choose unit:",
+                             ["gallon per minute", "cubic meter per second", "cubic foot per second",
+                              "acre-inches per hour",
+                              "acre feet per day"])
+    #if option_2:
+
+    option_3 = st.checkbox('Pressure')
+    pressure_unit = st.selectbox("Choose unit:", ["pressure per Square Inch (psi)", "meter"])
+    #if option_3:
+
+    start_datetime = datetime.datetime.combine(ymd_range[0], hms_start_day)
+    end_datetime = datetime.datetime.combine(ymd_range[1], hms_end_day)
+
+    start_datetime_str = start_datetime.strftime("%m/%d/%Y, %H:%M:%S")
+    end_datetime_str = end_datetime.strftime("%m/%d/%Y, %H:%M:%S")
+    # st.success('Selected time span starts from `%s` until `%s`' %(start_datetime_str, end_datetime_str))
+
+    # st.write('Selected time span starts from ', start_datetime, 'until', end_datetime)
+    mask = ((df['Time'] > np.datetime64(start_datetime)) & (df['Time'] <= np.datetime64(end_datetime)))
+    df = df.loc[mask]
+
+if option_1:
+    df1 = df[['Time', 'Bald Hill Tank_Level_ft', 'Scovill Tank_Level_ft']].melt('Time', var_name='Tank_Name', value_name='Water_Level')
+    # brush (click and drag) for selecting specific values on chart
+    #brush = alt.selection_interval(encodings=["x"])
+
+    # selection to allow highlight of genre when click on legend
+    selection = alt.selection_multi(fields=['Tank_Name'], bind='legend')
+
+    # scatterplot showing the correlation between two features for all genres
+    scatterplot = alt.Chart(df1).mark_line().encode(
+        alt.X('Time', scale=alt.Scale(zero=False)),
+        alt.Y('Water_Level', scale=alt.Scale(zero=False)),
+        alt.Color('Tank_Name:N', legend=alt.Legend(title="Tank Name")),
+        opacity=alt.condition(selection, alt.value(1), alt.value(0.2)),
+        tooltip=['Time', 'Tank_Name', 'Water_Level']
+    ).properties(
+        width=650, height=350
+    ).interactive().add_selection(
+        selection
+    )
+    st.write(scatterplot)
+
+# Create Radio Buttons
 #start_date = st.date_input('Start date', default_start_day)
 #end_date = st.date_input('End date', default_end_day)
 #if start_date < end_date:
