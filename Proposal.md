@@ -44,3 +44,9 @@ Sketch 2
 
 Sketch 3
 ![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/40662ec9d13dacd70164afd64ec3aa911efbb6d1/DraftSketch_3.jpeg)
+
+**Data Processing**
+
+The dataset of watertown consists of two parts: Water network data and costumer bills. We will explore each in the following paragraphs.
+
+- **Water network data:** This dataset consists of pressure, flow and water level readings of assets of water network at different times of the day. Pressure and flow can be real numbers 
