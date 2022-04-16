@@ -51,19 +51,20 @@ The dataset of watertown consists of two parts: Water network data and costumer 
 
 - **Water network data:** This dataset consists of pressure, flow and water level readings of assets of water network at different times of the day. Pressure and flow can be real numbers 
 
+
 Sketch 1
-![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.24%20PM.jpeg)
-
-Sketch 2
-![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.26%20PM.jpeg)
-
-Sketch 3
-![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.32%20PM.jpeg)
-
-Sketch 4
 ![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.36%20PM%20(1).jpeg)
 
-Sketch 5
+Sketch 2
 ![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.36%20PM.jpeg)
+
+Sketch 3
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.26%20PM.jpeg)
+
+Sketch 4
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.32%20PM.jpeg)
+
+Sketch 5
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.24%20PM.jpeg)
 
 
