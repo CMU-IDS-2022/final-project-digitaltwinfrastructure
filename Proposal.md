@@ -48,6 +48,17 @@ Sketch 3
 **Data Processing**
 
 The dataset of watertown consists of two parts: Water network data and costumer bills. We will explore each in the following paragraphs.
+Graph 1
+
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/01f13c207f95418f14a22725d04122e5f4d7cc90/WhatsApp%20Image%202022-04-15%20at%2010.02.30%20PM.jpeg)
+
+Graph 2
+
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/01f13c207f95418f14a22725d04122e5f4d7cc90/WhatsApp%20Image%202022-04-15%20at%2010.02.31%20PM%20(1).jpeg)
+
+Graph 3
+
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/01f13c207f95418f14a22725d04122e5f4d7cc90/WhatsApp%20Image%202022-04-15%20at%2010.02.31%20PM.jpeg)
 
 - **Water network data:** This dataset consists of pressure, flow and water level readings of assets of water network at different times of the day. Pressure and flow can be real numbers 
 
@@ -67,11 +78,3 @@ Sketch 4
 Sketch 5
 ![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.24%20PM.jpeg)
 
-Graph 1
-![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/01f13c207f95418f14a22725d04122e5f4d7cc90/WhatsApp%20Image%202022-04-15%20at%2010.02.30%20PM.jpeg)
-
-Graph 2
-![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/01f13c207f95418f14a22725d04122e5f4d7cc90/WhatsApp%20Image%202022-04-15%20at%2010.02.31%20PM%20(1).jpeg)
-
-Graph 3
-![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/01f13c207f95418f14a22725d04122e5f4d7cc90/WhatsApp%20Image%202022-04-15%20at%2010.02.31%20PM.jpeg)
