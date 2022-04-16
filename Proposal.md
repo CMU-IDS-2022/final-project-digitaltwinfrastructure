@@ -47,7 +47,26 @@ Sketch 3
 
 **Data Processing**
 
-The dataset of watertown consists of two parts: Water network data and costumer bills. We will explore each in the following paragraphs.
+The dataset of watertown consists of two parts: water network data and consumption data. We will explore each in the following paragraphs.
+
+- **Water network data:** This dataset consists of pressure, flow and water level readings of assets of water network at different times of the day. 
+The raw data of water network sensor readings is shown below:
+
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/raw_data.png)
+
+We reformatted the data so that the reading of each asset would be in a different column. Rows depict readings done in different time instances. The reformatted 
+data looks like this:
+
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/reformatted.png)
+
+As it is seen from above picture, some column names are not descriptive names like “V” which is used for time, and we renamed it to “Time”. Also, the “Unnamed” column should be removed. 
+Then we used “describe” method to explore the data. Also we inspected datatypes of columns. All datatypes were as expected except for “Time”. We changed its type to datetime using “to_datetime” method. Then we sorted all data based on “Time” column. 
+Also, We checked for null values but non were found:
+
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/null.PNG)
+
+Also, we made some charts for different columns of dataset to check for outliers. We draw flow, pressure, and water level vs time. 
+
 Graph 1
 
 ![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/01f13c207f95418f14a22725d04122e5f4d7cc90/WhatsApp%20Image%202022-04-15%20at%2010.02.30%20PM.jpeg)
@@ -60,8 +79,28 @@ Graph 3
 
 ![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/01f13c207f95418f14a22725d04122e5f4d7cc90/WhatsApp%20Image%202022-04-15%20at%2010.02.31%20PM.jpeg)
 
-- **Water network data:** This dataset consists of pressure, flow and water level readings of assets of water network at different times of the day. Pressure and flow can be real numbers 
+It is important to check this type of data in regards of time because changes in these features could be rational/irrational based on time of the day. No outliers were found.
 
+Also for pressure readings, we used “describe” method to see if maximum pressure values of valves fall within the allowable maximum pressure of pipes that are directly connected to the valve. Allowable maximum pressure of pipes is determined based on diameter of pipes and is as follows:
+
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/table.png)
+And we see that all numbers are reasonable.
+
+- **Consumption data:** This data consists of monthly water consumption of each customer. An screenshot of the data is shown below:
+- 
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/Bill.jpeg)
+
+The data has already been cleaned. We inspected data for outliers and none were found some outliers that we removed from the dataset. The histogram of water consumption before and after eliminating outliers is as below (respectively):
+
+With Outliers
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/Bill_before.png)
+
+Without Outliers
+
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/bill_after.png)
+
+
+**System Design**
 
 Sketch 1
 ![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/6f906941a56d225ca8b6d469bbde6d0c83e25e9d/WhatsApp%20Image%202022-04-15%20at%209.42.36%20PM%20(1).jpeg)
