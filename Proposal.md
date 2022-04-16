@@ -87,12 +87,13 @@ Also for pressure readings, we used “describe” method to see if maximum pres
 And we see that all numbers are reasonable.
 
 - **Consumption data:** This data consists of monthly water consumption of each customer. An screenshot of the data is shown below:
-- 
+
 ![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/Bill.jpeg)
 
 The data has already been cleaned. We inspected data for outliers and none were found some outliers that we removed from the dataset. The histogram of water consumption before and after eliminating outliers is as below (respectively):
 
 With Outliers
+
 ![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/Bill_before.png)
 
 Without Outliers
