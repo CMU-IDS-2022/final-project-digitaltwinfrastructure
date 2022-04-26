@@ -129,7 +129,7 @@ Reverse_numeric_month = {
 
 # define the main menu with two options ["Data Exploration", 'Water Network Management']
 with st.sidebar:
-    selected = option_menu("Main Menu", ["Water Network Exploration", "Pipe Data Exploration", "Water Usage Exploration", "Pipe-Break Prediction", "Water Network Management"],
+    selected = option_menu("Main Menu", ["Water Network Exploration", "Water Usage Exploration", "Pipe Data Exploration", "Pipe-Break Prediction", "Water Network Management"],
                icons=['bi bi-bounding-box-circles', 'bi bi-bezier', 'droplet-half', 'bi bi-exclamation-triangle-fill',
                       'bi bi-columns-gap', 'person-lines-fill'], menu_icon="cast",
                default_index=0)
