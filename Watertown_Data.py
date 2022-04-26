@@ -1634,6 +1634,8 @@ if selected == "Water Network Management":
     st.title(selected)
     km_df = pd.DataFrame()
     features1 = ['ID', 'Breaks_No']
+    df_pipe = load_pipe("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
+    df_pipe_orig = df_pipe.drop("FID", axis=1)
     with st.sidebar:
         st.header(':gear: Settings')
 
