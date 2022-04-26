@@ -87,15 +87,11 @@ def set_default():
 
 #Main Code
 # load water network data
-df = load_sensor("https://1drv.ms/u/s!AnhaxtVMqKpxgoYMvc0XlCSMCQcHYQ?e=NGl6vK")
-df_org = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-df_pipe = load_pipe("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
-df_pipe_orig = df_pipe.drop("FID", axis = 1)
 
-dfu = load_usage("https://1drv.ms/u/s!AnhaxtVMqKpxgok8LpetXE7Hfb1www?e=JQu4W0")
-df_75 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok6rtmFtgqn1vUt_Q?e=el633O")
-df_25 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok7oN74-f1eTi8BFw?e=yei0ZH")
+
+#dfu = load_usage("https://1drv.ms/u/s!AnhaxtVMqKpxgok8LpetXE7Hfb1www?e=JQu4W0")
+#df_75 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok6rtmFtgqn1vUt_Q?e=el633O")
+#df_25 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok7oN74-f1eTi8BFw?e=yei0ZH")
 
 numeric_month = {
                     "January": "1",
@@ -139,6 +135,9 @@ with st.sidebar:
 
 if selected == "Water Network Exploration":
     st.title(selected)
+    df = load_sensor("https://1drv.ms/u/s!AnhaxtVMqKpxgoYMvc0XlCSMCQcHYQ?e=NGl6vK")
+    df_org = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
     # The default value of date range
     ymd_range = [datetime.date(2019, 1, 1), datetime.date(2019, 1, 2)]
@@ -453,436 +452,439 @@ if selected == "Water Network Exploration":
 ###############################################################################################
 
     st.header("Distributions")
-    selected_options_dist = ["None","None","None"]
-    selected_options_dist_temp = st.multiselect('Select distribution variables ', ['Water level', 'Flow', 'Pressure'], default =  ['Water level', 'Flow', 'Pressure'])
-    j = 0
-    for i in selected_options_dist_temp:
-        selected_options_dist[j] = i
-        j = j + 1
+    if st.checkbox("Explore distributions:"):
+        selected_options_dist = ["None","None","None"]
+        selected_options_dist_temp = st.multiselect('Select distribution variables ', ['Water level', 'Flow', 'Pressure'], default =  ['Water level', 'Flow', 'Pressure'])
+        j = 0
+        for i in selected_options_dist_temp:
+            selected_options_dist[j] = i
+            j = j + 1
 
-    dfd = df_org
-    # must be used to avoid time shifting is charts
-    dfd['Time'] = dfd['Time'].dt.tz_localize('EST')
+        dfd = df_org
+        # must be used to avoid time shifting is charts
+        dfd['Time'] = dfd['Time'].dt.tz_localize('EST')
 
-    if ((selected_options_dist[0] == "Water level") | (selected_options_dist[1] == "Water level") | (selected_options_dist[2] == "Water level")): #option_1: #water level
-        st.subheader("Water Level")
-        dfd1 = dfd.rename(columns={'Bald Hill Tank_Level_ft': 'Bald Hill Tank',
-                                   'Scovill Tank_Level_ft': 'Scovill Tank'})
+        if ((selected_options_dist[0] == "Water level") | (selected_options_dist[1] == "Water level") | (selected_options_dist[2] == "Water level")): #option_1: #water level
+            st.subheader("Water Level")
+            dfd1 = dfd.rename(columns={'Bald Hill Tank_Level_ft': 'Bald Hill Tank',
+                                       'Scovill Tank_Level_ft': 'Scovill Tank'})
 
-        # reshape the data so that the values of different assets are all in the same column.
-        # we need this reformatting for plotting based on color.
-        dfd1 = dfd1[['Time', 'Bald Hill Tank', 'Scovill Tank']].melt('Time', var_name='Asset', value_name='Water_Level')
+            # reshape the data so that the values of different assets are all in the same column.
+            # we need this reformatting for plotting based on color.
+            dfd1 = dfd1[['Time', 'Bald Hill Tank', 'Scovill Tank']].melt('Time', var_name='Asset', value_name='Water_Level')
 
-        # change values based on selected unit.
-        if water_level_unit == 'meter':
-            unit_1 = 'm'
-            dfd1[['Water_Level']] = dfd1[['Water_Level']] * 0.3048
-        else:
-            unit_1 = 'ft'
+            # change values based on selected unit.
+            if water_level_unit == 'meter':
+                unit_1 = 'm'
+                dfd1[['Water_Level']] = dfd1[['Water_Level']] * 0.3048
+            else:
+                unit_1 = 'ft'
 
-        # rename the column so that it contains the selected unit. This name is shown on the y axis
-        column_name_1 = f"Water Level ({unit_1})"
-        dfd1 = dfd1.rename(columns={'Water_Level': column_name_1})
+            # rename the column so that it contains the selected unit. This name is shown on the y axis
+            column_name_1 = f"Water Level ({unit_1})"
+            dfd1 = dfd1.rename(columns={'Water_Level': column_name_1})
 
-        #del selected_options_dist[0]
-        #Scatter and histogram
-        colL, colM, colR = st.columns([1, 1, 1])
+            #del selected_options_dist[0]
+            #Scatter and histogram
+            colL, colM, colR = st.columns([1, 1, 1])
 
-        with colL:
-            selected_assets = ["0", "0"]
-            selected_assets_temp = st.multiselect('Select assets:', ['Bald Hill Tank', 'Scovill Tank'], default = 'Bald Hill Tank')
-            j = 0
-            for i in selected_assets_temp:
-                selected_assets[j] = i
-                j = j + 1
-
-        with colM:
-            selected_years = ["0", "0", "0"]
-            selected_years_temp = st.multiselect('Select years:', ['2019', '2020', '2021'], default = "2019")
-            j = 0
-            for i in selected_years_temp:
-                selected_years[j] = i
-                j = j + 1
-            dfd1['year'] = dfd1['Time'].dt.year
-            mask_d1 = ((dfd1['year'].astype(int) == int(selected_years[0])) | (dfd1['year'] == int(selected_years[1])) | (dfd1['year'] == int(selected_years[2])))
-            dfd1 = dfd1.loc[mask_d1]
-
-        with colR:
-            selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-            selected_months_temp = st.multiselect('Select months:', ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], default = ['January', 'February'])
-            dfd1['month'] = dfd1['Time'].dt.month
-            if len(selected_months_temp) != 0:
+            with colL:
+                selected_assets = ["0", "0"]
+                selected_assets_temp = st.multiselect('Select assets:', ['Bald Hill Tank', 'Scovill Tank'], default = 'Bald Hill Tank')
                 j = 0
-                for i in selected_months_temp:
-                    selected_months[j] = numeric_month[i]
+                for i in selected_assets_temp:
+                    selected_assets[j] = i
                     j = j + 1
-                mask_h = ((dfd1['month'].astype(int) == int(selected_months[0])) | (
+
+            with colM:
+                selected_years = ["0", "0", "0"]
+                selected_years_temp = st.multiselect('Select years:', ['2019', '2020', '2021'], default = "2019")
+                j = 0
+                for i in selected_years_temp:
+                    selected_years[j] = i
+                    j = j + 1
+                dfd1['year'] = dfd1['Time'].dt.year
+                mask_d1 = ((dfd1['year'].astype(int) == int(selected_years[0])) | (dfd1['year'] == int(selected_years[1])) | (dfd1['year'] == int(selected_years[2])))
+                dfd1 = dfd1.loc[mask_d1]
+
+            with colR:
+                selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+                selected_months_temp = st.multiselect('Select months:', ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], default = ['January', 'February'])
+                dfd1['month'] = dfd1['Time'].dt.month
+                if len(selected_months_temp) != 0:
+                    j = 0
+                    for i in selected_months_temp:
+                        selected_months[j] = numeric_month[i]
+                        j = j + 1
+                    mask_h = ((dfd1['month'].astype(int) == int(selected_months[0])) | (
+                                dfd1['month'].astype(int) == int(selected_months[1])) | (
+                                dfd1['month'].astype(int) == int(selected_months[2])) | (
+                                dfd1['month'].astype(int) == int(selected_months[3])) | (
+                                dfd1['month'].astype(int) == int(selected_months[4])) | (
+                                dfd1['month'].astype(int) == int(selected_months[5])) | (
+                                dfd1['month'].astype(int) == int(selected_months[6])) | (
+                                dfd1['month'].astype(int) == int(selected_months[7])) | (
+                                dfd1['month'].astype(int) == int(selected_months[8])) | (
+                                dfd1['month'].astype(int) == int(selected_months[9])) | (
+                                dfd1['month'].astype(int) == int(selected_months[10])) | (
+                                dfd1['month'].astype(int) == int(selected_months[11]))
+                              )
+                    dfd1 = dfd1.loc[mask_h]
+
+
+            selection_x = st.radio("Breakdown based on:", ["year", "month", "none"])
+            if selection_x == "none":
+                dfd1['none'] = 1
+
+            # interval selection in the scatter plot
+            dfd1_copy = dfd1
+            for i in range(len(selected_assets_temp)):
+                pts = alt.selection(type="interval", encodings=["x"])
+                dfd1 = dfd1_copy
+                mask_d1 = (dfd1['Asset'] == selected_assets[i])
+                dfd1 = dfd1.loc[mask_d1]
+                # left panel: scatter plot
+                points = alt.Chart(dfd1).mark_point(filled=False).encode(
+                    x=alt.X('dayhoursminutes(Time):O', scale=alt.Scale(zero=False)),
+                    y=alt.Y(column_name_1, scale=alt.Scale(zero=False)),
+                    color = alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
+                    opacity=alt.condition(pts, alt.value(1), alt.value(0.1))
+                ).add_selection(pts).properties(
+                    width=650,
+                    height=350
+                )
+                st.subheader(f"{selected_assets[i]}")
+                #st.write(points)
+                # right panel: histogram
+                mag = (alt.Chart(dfd1).mark_bar().encode(
+                    x=alt.X(column_name_1, bin=True),
+                    y=alt.Y('count()', stack= True),
+                    #opacity=alt.condition(pts, alt.value(1), alt.value(0)),
+                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
+
+                ).properties(
+                    width=300,
+                    height=300
+                ).transform_filter(
+                    pts
+                ))
+
+
+                #st.write(mag)
+                # build the chart:
+                scatter = alt.hconcat(points,mag).transform_bin(f"{column_name_1} binned",field=column_name_1,bin=alt.Bin(maxbins=20))
+                st.write(scatter)
+        if ((selected_options_dist[0] == "Flow") | (selected_options_dist[1] == "Flow") | (
+                selected_options_dist[2] == "Flow")):
+            st.subheader("Flow")
+            dfd1 = dfd.rename(columns={'Bald Hill Tank_Net_Flow_Out_gpm': 'Bald Hill Tank',
+                                     'PRV-1_Flow_gpm': 'PRV-1',
+                                     'PRV-2_Flow_gpm': 'PRV-2',
+                                     'PRV-3_Flow_gpm': 'PRV-3',
+                                     'PRV-4_Flow_gpm': 'PRV-4',
+                                     'PRV-5_Flow_gpm': 'PRV-5',
+                                     'PRV-6_Flow_gpm': 'PRV-6',
+                                     'PRV-7_Flow_gpm': 'PRV-7',
+                                     'School_Flow_gpm': 'School',
+                                     'Well PMP-1_Flow_gpm': 'Well PMP-1',
+                                     'Well PMP-2_Flow_gpm': 'Well PMP-2',
+                                     'Well PMP-3_Flow_gpm': 'Well PMP-3',
+                                     'Well Station Discharge_Flow_gpm': 'Well Station',
+                                     'WTP PMP-1_Flow_gpm': 'WTP PMP-1',
+                                     'WTP PMP-2_Flow_gpm': 'WTP PMP-2',
+                                     'WTP PMP-3_Flow_gpm': 'WTP PMP-3',
+                                     'WTP Station Discharge_Flow_gpm': 'WTP Station'})
+
+            dfd1 = dfd1[['Time', 'Bald Hill Tank', 'PRV-1',
+                       'PRV-2', 'PRV-3', 'PRV-4', 'PRV-5',
+                       'PRV-6', 'PRV-7', 'Well PMP-1',
+                       'Well PMP-2', 'Well PMP-3', 'Well Station',
+                       'WTP PMP-1', 'WTP PMP-2', 'WTP PMP-3',
+                       'WTP Station', 'School']].melt('Time', var_name='Asset', value_name='Flow')
+
+            if flow_unit == 'gallon per minute':
+                unit_2 = 'gpm'
+            elif flow_unit == 'cubic meter per second':
+                unit_2 = 'm^3/sec'
+                dfd1[['Flow']] = dfd1[['Flow']] * 0.0000630902
+            elif flow_unit == 'cubic foot per second':
+                unit_2 = 'ft^3/sec'
+                dfd1[['Flow']] = dfd1[['Flow']] * 0.0022280093
+            elif flow_unit == 'acre-foot per day':
+                unit_2 = 'ac*ft/day'
+                dfd1[['Flow']] = dfd1[['Flow']] * 0.0044191742
+            elif flow_unit == 'acre-inch per hour':
+                unit_2 = 'ac*in/hour'
+                dfd1[['Flow']] = dfd1[['Flow']] * 0.0026536140977965
+
+            dfd1 = dfd1.rename(columns={'Flow': f'Flow ({unit_2})'})
+
+            column_name_1 = f"Flow ({unit_2})"
+
+            dfd1 = dfd1.rename(columns={'Flow': column_name_1})
+
+            # del selected_options_dist[0]
+            # Scatter and histogram
+            colL, colM, colR = st.columns([1, 1, 1])
+
+            with colL:
+                selected_assets = ["0", "0", "0","0","0","0", "0", "0", "0","0","0","0","0","0","0","0","0"]
+                selected_assets_temp = st.multiselect('Select assets:', ['Bald Hill Tank', 'PRV-1','PRV-2', 'PRV-3', 'PRV-4', 'PRV-5','PRV-6', 'PRV-7', 'Well PMP-1','Well PMP-2', 'Well PMP-3', 'Well Station','WTP PMP-1', 'WTP PMP-2', 'WTP PMP-3','WTP Station', 'School'],
+                                                      default='Bald Hill Tank')
+                j = 0
+                for i in selected_assets_temp:
+                    selected_assets[j] = i
+                    j = j + 1
+
+            with colM:
+                selected_years = ["0", "0", "0"]
+                selected_years_temp = st.multiselect('Select years :', ['2019', '2020', '2021'], default="2019")
+                j = 0
+                for i in selected_years_temp:
+                    selected_years[j] = i
+                    j = j + 1
+                dfd1['year'] = dfd1['Time'].dt.year
+                mask_d1 = ((dfd1['year'].astype(int) == int(selected_years[0])) | (
+                            dfd1['year'] == int(selected_years[1])) | (dfd1['year'] == int(selected_years[2])))
+                dfd1 = dfd1.loc[mask_d1]
+
+            with colR:
+                selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+                selected_months_temp = st.multiselect('Select months :',
+                                                      ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                                                       'August', 'September', 'October', 'November', 'December'],default = ['January', 'February'])
+                dfd1['month'] = dfd1['Time'].dt.month
+                if len(selected_months_temp) != 0:
+                    j = 0
+                    for i in selected_months_temp:
+                        selected_months[j] = numeric_month[i]
+                        j = j + 1
+                    mask_h = ((dfd1['month'].astype(int) == int(selected_months[0])) | (
                             dfd1['month'].astype(int) == int(selected_months[1])) | (
-                            dfd1['month'].astype(int) == int(selected_months[2])) | (
-                            dfd1['month'].astype(int) == int(selected_months[3])) | (
-                            dfd1['month'].astype(int) == int(selected_months[4])) | (
-                            dfd1['month'].astype(int) == int(selected_months[5])) | (
-                            dfd1['month'].astype(int) == int(selected_months[6])) | (
-                            dfd1['month'].astype(int) == int(selected_months[7])) | (
-                            dfd1['month'].astype(int) == int(selected_months[8])) | (
-                            dfd1['month'].astype(int) == int(selected_months[9])) | (
-                            dfd1['month'].astype(int) == int(selected_months[10])) | (
-                            dfd1['month'].astype(int) == int(selected_months[11]))
-                          )
-                dfd1 = dfd1.loc[mask_h]
+                                      dfd1['month'].astype(int) == int(selected_months[2])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[3])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[4])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[5])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[6])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[7])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[8])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[9])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[10])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[11]))
+                              )
+                    dfd1 = dfd1.loc[mask_h]
+
+            selection_x = st.radio("Breakdown based on :", ["year", "month", "none"])
+            if selection_x == "none":
+                dfd1['none'] = 1
+
+            # interval selection in the scatter plot
+            dfd1_copy = dfd1
+            for i in range(len(selected_assets_temp)):
+                pts = alt.selection(type="interval", encodings=["x"])
+                dfd1 = dfd1_copy
+                mask_d1 = (dfd1['Asset'] == selected_assets[i])
+                dfd1 = dfd1.loc[mask_d1]
+                # left panel: scatter plot
+                points = alt.Chart(dfd1).mark_point(filled=False).encode(
+                    x=alt.X('dayhoursminutes(Time):O', scale=alt.Scale(zero=False)),
+                    y=alt.Y(column_name_1, scale=alt.Scale(zero=False)),
+                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
+                    opacity=alt.condition(pts, alt.value(1), alt.value(0.1))
+                ).add_selection(pts).properties(
+                    width=650,
+                    height=350
+                )
+                st.subheader(f"{selected_assets[i]}")
+                # st.write(points)
+                # right panel: histogram
+                mag = (alt.Chart(dfd1).mark_bar().encode(
+                    x=alt.X(column_name_1, bin=True),
+                    y=alt.Y('count()', stack=True),
+                    # opacity=alt.condition(pts, alt.value(1), alt.value(0)),
+                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
+
+                ).properties(
+                    width=300,
+                    height=300
+                ).transform_filter(
+                    pts
+                ))
+
+                # st.write(mag)
+                # build the chart:
+                scatter = alt.hconcat(points, mag).transform_bin(f"{column_name_1} binned", field=column_name_1,
+                                                                 bin=alt.Bin(maxbins=20))
+                st.write(scatter)
+
+        if ((selected_options_dist[0] == "Pressure") | (selected_options_dist[1] == "Pressure") | (
+                selected_options_dist[2] == "Pressure")):
+            st.subheader("Pressure")
+            dfd1 = dfd.rename(columns={'PRV-1_FromPressure_psi': 'PRV-1 (from)',
+                                     'PRV-2_FromPressure_psi': 'PRV-2 (from)',
+                                     'PRV-3_FromPressure_psi': 'PRV-3 (from)',
+                                     'PRV-4_FromPressure_psi': 'PRV-4 (from)',
+                                     'PRV-5_FromPressure_psi': 'PRV-5 (from)',
+                                     'PRV-6_FromPressure_psi': 'PRV-6 (from)',
+                                     'PRV-7_FromPressure_psi': 'PRV-7 (from)',
+                                     'PRV-1_ToPressure_psi': 'PRV-1 (to)',
+                                     'PRV-2_ToPressure_psi': 'PRV-2 (to)',
+                                     'PRV-3_ToPressure_psi': 'PRV-3 (to)',
+                                     'PRV-4_ToPressure_psi': 'PRV-4 (to)',
+                                     'PRV-5_ToPressure_psi': 'PRV-5 (to)',
+                                     'PRV-6_ToPressure_psi': 'PRV-6 (to)',
+                                     'PRV-7_ToPressure_psi': 'PRV-7 (to)',
+                                     'Well Discharge_Pressure_psi': 'Well (discharge)',
+                                     'Well Suction_Pressure_psi': 'Well (suction)',
+                                     'Well PMP-1_DischargePressure_psi': 'Well PMP-1 (discharge)',
+                                     'Well PMP-2_DischargePressure_psi': 'Well PMP-2 (discharge)',
+                                     'Well PMP-3_DischargePressure_psi': 'Well PMP-3 (discharge)',
+                                     'Well PMP-1_SuctionPressure_psi': 'Well PMP-1 (suction)',
+                                     'Well PMP-2_SuctionPressure_psi': 'Well PMP-2 (suction)',
+                                     'Well PMP-3_SuctionPressure_psi': 'Well PMP-3 (suction)',
+                                     'WTP Discharge_Pressure_psi': 'WTP (discharge)',
+                                     'WTP Suction_Pressure_psi': 'WTP (suction)',
+                                     'WTP PMP-1_SuctionPressure_psi': 'WTP PMP-1 (suction)',
+                                     'WTP PMP-2_SuctionPressure_psi': 'WTP PMP-2 (suction)',
+                                     'WTP PMP-3_SuctionPressure_psi': 'WTP PMP-3 (suction)'
+                                     })
+
+            dfd1 = dfd1[['Time', 'PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
+                       'PRV-4 (from)', 'PRV-5 (from)', 'PRV-6 (from)', 'PRV-7 (from)',
+                       'PRV-1 (to)', 'PRV-2 (to)', 'PRV-3 (to)', 'PRV-4 (to)',
+                       'PRV-5 (to)', 'PRV-6 (to)', 'PRV-7 (to)', 'Well (discharge)', 'Well (suction)',
+                       'Well PMP-1 (discharge)', 'Well PMP-1 (suction)',
+                       'Well PMP-2 (discharge)', 'Well PMP-2 (suction)',
+                       'Well PMP-3 (discharge)', 'Well PMP-3 (suction)',
+                       'WTP (discharge)', 'WTP (suction)', 'WTP PMP-1 (suction)', 'WTP PMP-2 (suction)',
+                       'WTP PMP-3 (suction)']].melt('Time', var_name='Asset', value_name='Pressure')
+
+            if pressure_unit == 'pressure per square inch':
+                unit_3 = 'psi'
+            elif pressure_unit == 'meter of head':
+                unit_3 = 'm'
+                df3[['Pressure']] = dfd1[['Pressure']] * 0.70324961490205
+
+            dfd1 = dfd1.rename(columns={'Pressure': f'Pressure ({unit_3})'})
+
+            column_name_1 = f"Pressure ({unit_3})"
 
 
-        selection_x = st.radio("Breakdown based on:", ["year", "month", "none"])
-        if selection_x == "none":
-            dfd1['none'] = 1
+            dfd1 = dfd1.rename(columns={'Flow': column_name_1})
 
-        # interval selection in the scatter plot
-        dfd1_copy = dfd1
-        for i in range(len(selected_assets_temp)):
-            pts = alt.selection(type="interval", encodings=["x"])
-            dfd1 = dfd1_copy
-            mask_d1 = (dfd1['Asset'] == selected_assets[i])
-            dfd1 = dfd1.loc[mask_d1]
-            # left panel: scatter plot
-            points = alt.Chart(dfd1).mark_point(filled=False).encode(
-                x=alt.X('dayhoursminutes(Time):O', scale=alt.Scale(zero=False)),
-                y=alt.Y(column_name_1, scale=alt.Scale(zero=False)),
-                color = alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-                opacity=alt.condition(pts, alt.value(1), alt.value(0.1))
-            ).add_selection(pts).properties(
-                width=650,
-                height=350
-            )
-            st.subheader(f"{selected_assets[i]}")
-            #st.write(points)
-            # right panel: histogram
-            mag = (alt.Chart(dfd1).mark_bar().encode(
-                x=alt.X(column_name_1, bin=True),
-                y=alt.Y('count()', stack= True),
-                #opacity=alt.condition(pts, alt.value(1), alt.value(0)),
-                color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
+            # del selected_options_dist[0]
+            # Scatter and histogram
+            colL, colM, colR = st.columns([1, 1, 1])
 
-            ).properties(
-                width=300,
-                height=300
-            ).transform_filter(
-                pts
-            ))
+            with colL:
+                selected_assets = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0","0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+                selected_assets_temp = st.multiselect('Select assets',
+                                                      ['PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
+                                                       'PRV-4 (from)', 'PRV-5 (from)', 'PRV-6 (from)', 'PRV-7 (from)',
+                                                       'PRV-1 (to)', 'PRV-2 (to)', 'PRV-3 (to)', 'PRV-4 (to)',
+                                                       'PRV-5 (to)', 'PRV-6 (to)', 'PRV-7 (to)', 'Well (discharge)',
+                                                       'Well (suction)',
+                                                       'Well PMP-1 (discharge)', 'Well PMP-1 (suction)',
+                                                       'Well PMP-2 (discharge)', 'Well PMP-2 (suction)',
+                                                       'Well PMP-3 (discharge)', 'Well PMP-3 (suction)',
+                                                       'WTP (discharge)', 'WTP (suction)', 'WTP PMP-1 (suction)',
+                                                       'WTP PMP-2 (suction)',
+                                                       'WTP PMP-3 (suction)'],
+                                                      default='PRV-1 (from)')
 
+                j = 0
+                for i in selected_assets_temp:
+                    selected_assets[j] = i
+                    j = j + 1
 
-            #st.write(mag)
-            # build the chart:
-            scatter = alt.hconcat(points,mag).transform_bin(f"{column_name_1} binned",field=column_name_1,bin=alt.Bin(maxbins=20))
-            st.write(scatter)
-    if ((selected_options_dist[0] == "Flow") | (selected_options_dist[1] == "Flow") | (
-            selected_options_dist[2] == "Flow")):
-        st.subheader("Flow")
-        dfd1 = dfd.rename(columns={'Bald Hill Tank_Net_Flow_Out_gpm': 'Bald Hill Tank',
-                                 'PRV-1_Flow_gpm': 'PRV-1',
-                                 'PRV-2_Flow_gpm': 'PRV-2',
-                                 'PRV-3_Flow_gpm': 'PRV-3',
-                                 'PRV-4_Flow_gpm': 'PRV-4',
-                                 'PRV-5_Flow_gpm': 'PRV-5',
-                                 'PRV-6_Flow_gpm': 'PRV-6',
-                                 'PRV-7_Flow_gpm': 'PRV-7',
-                                 'School_Flow_gpm': 'School',
-                                 'Well PMP-1_Flow_gpm': 'Well PMP-1',
-                                 'Well PMP-2_Flow_gpm': 'Well PMP-2',
-                                 'Well PMP-3_Flow_gpm': 'Well PMP-3',
-                                 'Well Station Discharge_Flow_gpm': 'Well Station',
-                                 'WTP PMP-1_Flow_gpm': 'WTP PMP-1',
-                                 'WTP PMP-2_Flow_gpm': 'WTP PMP-2',
-                                 'WTP PMP-3_Flow_gpm': 'WTP PMP-3',
-                                 'WTP Station Discharge_Flow_gpm': 'WTP Station'})
-
-        dfd1 = dfd1[['Time', 'Bald Hill Tank', 'PRV-1',
-                   'PRV-2', 'PRV-3', 'PRV-4', 'PRV-5',
-                   'PRV-6', 'PRV-7', 'Well PMP-1',
-                   'Well PMP-2', 'Well PMP-3', 'Well Station',
-                   'WTP PMP-1', 'WTP PMP-2', 'WTP PMP-3',
-                   'WTP Station', 'School']].melt('Time', var_name='Asset', value_name='Flow')
-
-        if flow_unit == 'gallon per minute':
-            unit_2 = 'gpm'
-        elif flow_unit == 'cubic meter per second':
-            unit_2 = 'm^3/sec'
-            dfd1[['Flow']] = dfd1[['Flow']] * 0.0000630902
-        elif flow_unit == 'cubic foot per second':
-            unit_2 = 'ft^3/sec'
-            dfd1[['Flow']] = dfd1[['Flow']] * 0.0022280093
-        elif flow_unit == 'acre-foot per day':
-            unit_2 = 'ac*ft/day'
-            dfd1[['Flow']] = dfd1[['Flow']] * 0.0044191742
-        elif flow_unit == 'acre-inch per hour':
-            unit_2 = 'ac*in/hour'
-            dfd1[['Flow']] = dfd1[['Flow']] * 0.0026536140977965
-
-        dfd1 = dfd1.rename(columns={'Flow': f'Flow ({unit_2})'})
-
-        column_name_1 = f"Flow ({unit_2})"
-
-        dfd1 = dfd1.rename(columns={'Flow': column_name_1})
-
-        # del selected_options_dist[0]
-        # Scatter and histogram
-        colL, colM, colR = st.columns([1, 1, 1])
-
-        with colL:
-            selected_assets = ["0", "0", "0","0","0","0", "0", "0", "0","0","0","0","0","0","0","0","0"]
-            selected_assets_temp = st.multiselect('Select assets:', ['Bald Hill Tank', 'PRV-1','PRV-2', 'PRV-3', 'PRV-4', 'PRV-5','PRV-6', 'PRV-7', 'Well PMP-1','Well PMP-2', 'Well PMP-3', 'Well Station','WTP PMP-1', 'WTP PMP-2', 'WTP PMP-3','WTP Station', 'School'],
-                                                  default='Bald Hill Tank')
-            j = 0
-            for i in selected_assets_temp:
-                selected_assets[j] = i
-                j = j + 1
-
-        with colM:
-            selected_years = ["0", "0", "0"]
-            selected_years_temp = st.multiselect('Select years :', ['2019', '2020', '2021'], default="2019")
-            j = 0
-            for i in selected_years_temp:
-                selected_years[j] = i
-                j = j + 1
-            dfd1['year'] = dfd1['Time'].dt.year
-            mask_d1 = ((dfd1['year'].astype(int) == int(selected_years[0])) | (
+            with colM:
+                selected_years = ["0", "0", "0"]
+                selected_years_temp = st.multiselect('Select years', ['2019', '2020', '2021'], default="2019")
+                j = 0
+                for i in selected_years_temp:
+                    selected_years[j] = i
+                    j = j + 1
+                dfd1['year'] = dfd1['Time'].dt.year
+                mask_d1 = ((dfd1['year'].astype(int) == int(selected_years[0])) | (
                         dfd1['year'] == int(selected_years[1])) | (dfd1['year'] == int(selected_years[2])))
-            dfd1 = dfd1.loc[mask_d1]
+                dfd1 = dfd1.loc[mask_d1]
 
-        with colR:
-            selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-            selected_months_temp = st.multiselect('Select months :',
-                                                  ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-                                                   'August', 'September', 'October', 'November', 'December'],default = ['January', 'February'])
-            dfd1['month'] = dfd1['Time'].dt.month
-            if len(selected_months_temp) != 0:
-                j = 0
-                for i in selected_months_temp:
-                    selected_months[j] = numeric_month[i]
-                    j = j + 1
-                mask_h = ((dfd1['month'].astype(int) == int(selected_months[0])) | (
-                        dfd1['month'].astype(int) == int(selected_months[1])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[2])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[3])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[4])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[5])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[6])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[7])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[8])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[9])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[10])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[11]))
-                          )
-                dfd1 = dfd1.loc[mask_h]
+            with colR:
+                selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
+                selected_months_temp = st.multiselect('Select months',
+                                                      ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                                                       'August', 'September', 'October', 'November', 'December'], default = ['January', 'February'])
+                dfd1['month'] = dfd1['Time'].dt.month
+                if len(selected_months_temp) != 0:
+                    j = 0
+                    for i in selected_months_temp:
+                        selected_months[j] = numeric_month[i]
+                        j = j + 1
+                    mask_h = ((dfd1['month'].astype(int) == int(selected_months[0])) | (
+                            dfd1['month'].astype(int) == int(selected_months[1])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[2])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[3])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[4])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[5])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[6])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[7])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[8])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[9])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[10])) | (
+                                      dfd1['month'].astype(int) == int(selected_months[11]))
+                              )
+                    dfd1 = dfd1.loc[mask_h]
 
-        selection_x = st.radio("Breakdown based on :", ["year", "month", "none"])
-        if selection_x == "none":
-            dfd1['none'] = 1
+            selection_x = st.radio("Breakdown based on", ["year", "month", "none"])
+            if selection_x == "none":
+                dfd1['none'] = 1
 
-        # interval selection in the scatter plot
-        dfd1_copy = dfd1
-        for i in range(len(selected_assets_temp)):
-            pts = alt.selection(type="interval", encodings=["x"])
-            dfd1 = dfd1_copy
-            mask_d1 = (dfd1['Asset'] == selected_assets[i])
-            dfd1 = dfd1.loc[mask_d1]
-            # left panel: scatter plot
-            points = alt.Chart(dfd1).mark_point(filled=False).encode(
-                x=alt.X('dayhoursminutes(Time):O', scale=alt.Scale(zero=False)),
-                y=alt.Y(column_name_1, scale=alt.Scale(zero=False)),
-                color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-                opacity=alt.condition(pts, alt.value(1), alt.value(0.1))
-            ).add_selection(pts).properties(
-                width=650,
-                height=350
-            )
-            st.subheader(f"{selected_assets[i]}")
-            # st.write(points)
-            # right panel: histogram
-            mag = (alt.Chart(dfd1).mark_bar().encode(
-                x=alt.X(column_name_1, bin=True),
-                y=alt.Y('count()', stack=True),
-                # opacity=alt.condition(pts, alt.value(1), alt.value(0)),
-                color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
+            # interval selection in the scatter plot
+            dfd1_copy = dfd1
+            for i in range(len(selected_assets_temp)):
+                pts = alt.selection(type="interval", encodings=["x"])
+                dfd1 = dfd1_copy
+                mask_d1 = (dfd1['Asset'] == selected_assets[i])
+                dfd1 = dfd1.loc[mask_d1]
+                # left panel: scatter plot
+                points = alt.Chart(dfd1).mark_point(filled=False).encode(
+                    x=alt.X('dayhoursminutes(Time):O', scale=alt.Scale(zero=False)),
+                    y=alt.Y(column_name_1, scale=alt.Scale(zero=False)),
+                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
+                    opacity=alt.condition(pts, alt.value(1), alt.value(0.1))
+                ).add_selection(pts).properties(
+                    width=650,
+                    height=350
+                )
+                st.subheader(f"{selected_assets[i]}")
+                # st.write(points)
+                # right panel: histogram
+                mag = (alt.Chart(dfd1).mark_bar().encode(
+                    x=alt.X(column_name_1, bin=True),
+                    y=alt.Y('count()', stack=True),
+                    # opacity=alt.condition(pts, alt.value(1), alt.value(0)),
+                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
 
-            ).properties(
-                width=300,
-                height=300
-            ).transform_filter(
-                pts
-            ))
+                ).properties(
+                    width=300,
+                    height=300
+                ).transform_filter(
+                    pts
+                ))
 
-            # st.write(mag)
-            # build the chart:
-            scatter = alt.hconcat(points, mag).transform_bin(f"{column_name_1} binned", field=column_name_1,
-                                                             bin=alt.Bin(maxbins=20))
-            st.write(scatter)
-
-    if ((selected_options_dist[0] == "Pressure") | (selected_options_dist[1] == "Pressure") | (
-            selected_options_dist[2] == "Pressure")):
-        st.subheader("Pressure")
-        dfd1 = dfd.rename(columns={'PRV-1_FromPressure_psi': 'PRV-1 (from)',
-                                 'PRV-2_FromPressure_psi': 'PRV-2 (from)',
-                                 'PRV-3_FromPressure_psi': 'PRV-3 (from)',
-                                 'PRV-4_FromPressure_psi': 'PRV-4 (from)',
-                                 'PRV-5_FromPressure_psi': 'PRV-5 (from)',
-                                 'PRV-6_FromPressure_psi': 'PRV-6 (from)',
-                                 'PRV-7_FromPressure_psi': 'PRV-7 (from)',
-                                 'PRV-1_ToPressure_psi': 'PRV-1 (to)',
-                                 'PRV-2_ToPressure_psi': 'PRV-2 (to)',
-                                 'PRV-3_ToPressure_psi': 'PRV-3 (to)',
-                                 'PRV-4_ToPressure_psi': 'PRV-4 (to)',
-                                 'PRV-5_ToPressure_psi': 'PRV-5 (to)',
-                                 'PRV-6_ToPressure_psi': 'PRV-6 (to)',
-                                 'PRV-7_ToPressure_psi': 'PRV-7 (to)',
-                                 'Well Discharge_Pressure_psi': 'Well (discharge)',
-                                 'Well Suction_Pressure_psi': 'Well (suction)',
-                                 'Well PMP-1_DischargePressure_psi': 'Well PMP-1 (discharge)',
-                                 'Well PMP-2_DischargePressure_psi': 'Well PMP-2 (discharge)',
-                                 'Well PMP-3_DischargePressure_psi': 'Well PMP-3 (discharge)',
-                                 'Well PMP-1_SuctionPressure_psi': 'Well PMP-1 (suction)',
-                                 'Well PMP-2_SuctionPressure_psi': 'Well PMP-2 (suction)',
-                                 'Well PMP-3_SuctionPressure_psi': 'Well PMP-3 (suction)',
-                                 'WTP Discharge_Pressure_psi': 'WTP (discharge)',
-                                 'WTP Suction_Pressure_psi': 'WTP (suction)',
-                                 'WTP PMP-1_SuctionPressure_psi': 'WTP PMP-1 (suction)',
-                                 'WTP PMP-2_SuctionPressure_psi': 'WTP PMP-2 (suction)',
-                                 'WTP PMP-3_SuctionPressure_psi': 'WTP PMP-3 (suction)'
-                                 })
-
-        dfd1 = dfd1[['Time', 'PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
-                   'PRV-4 (from)', 'PRV-5 (from)', 'PRV-6 (from)', 'PRV-7 (from)',
-                   'PRV-1 (to)', 'PRV-2 (to)', 'PRV-3 (to)', 'PRV-4 (to)',
-                   'PRV-5 (to)', 'PRV-6 (to)', 'PRV-7 (to)', 'Well (discharge)', 'Well (suction)',
-                   'Well PMP-1 (discharge)', 'Well PMP-1 (suction)',
-                   'Well PMP-2 (discharge)', 'Well PMP-2 (suction)',
-                   'Well PMP-3 (discharge)', 'Well PMP-3 (suction)',
-                   'WTP (discharge)', 'WTP (suction)', 'WTP PMP-1 (suction)', 'WTP PMP-2 (suction)',
-                   'WTP PMP-3 (suction)']].melt('Time', var_name='Asset', value_name='Pressure')
-
-        if pressure_unit == 'pressure per square inch':
-            unit_3 = 'psi'
-        elif pressure_unit == 'meter of head':
-            unit_3 = 'm'
-            df3[['Pressure']] = dfd1[['Pressure']] * 0.70324961490205
-
-        dfd1 = dfd1.rename(columns={'Pressure': f'Pressure ({unit_3})'})
-
-        column_name_1 = f"Pressure ({unit_3})"
-
-
-        dfd1 = dfd1.rename(columns={'Flow': column_name_1})
-
-        # del selected_options_dist[0]
-        # Scatter and histogram
-        colL, colM, colR = st.columns([1, 1, 1])
-
-        with colL:
-            selected_assets = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0","0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-            selected_assets_temp = st.multiselect('Select assets',
-                                                  ['PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
-                                                   'PRV-4 (from)', 'PRV-5 (from)', 'PRV-6 (from)', 'PRV-7 (from)',
-                                                   'PRV-1 (to)', 'PRV-2 (to)', 'PRV-3 (to)', 'PRV-4 (to)',
-                                                   'PRV-5 (to)', 'PRV-6 (to)', 'PRV-7 (to)', 'Well (discharge)',
-                                                   'Well (suction)',
-                                                   'Well PMP-1 (discharge)', 'Well PMP-1 (suction)',
-                                                   'Well PMP-2 (discharge)', 'Well PMP-2 (suction)',
-                                                   'Well PMP-3 (discharge)', 'Well PMP-3 (suction)',
-                                                   'WTP (discharge)', 'WTP (suction)', 'WTP PMP-1 (suction)',
-                                                   'WTP PMP-2 (suction)',
-                                                   'WTP PMP-3 (suction)'],
-                                                  default='PRV-1 (from)')
-
-            j = 0
-            for i in selected_assets_temp:
-                selected_assets[j] = i
-                j = j + 1
-
-        with colM:
-            selected_years = ["0", "0", "0"]
-            selected_years_temp = st.multiselect('Select years', ['2019', '2020', '2021'], default="2019")
-            j = 0
-            for i in selected_years_temp:
-                selected_years[j] = i
-                j = j + 1
-            dfd1['year'] = dfd1['Time'].dt.year
-            mask_d1 = ((dfd1['year'].astype(int) == int(selected_years[0])) | (
-                    dfd1['year'] == int(selected_years[1])) | (dfd1['year'] == int(selected_years[2])))
-            dfd1 = dfd1.loc[mask_d1]
-
-        with colR:
-            selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-            selected_months_temp = st.multiselect('Select months',
-                                                  ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-                                                   'August', 'September', 'October', 'November', 'December'], default = ['January', 'February'])
-            dfd1['month'] = dfd1['Time'].dt.month
-            if len(selected_months_temp) != 0:
-                j = 0
-                for i in selected_months_temp:
-                    selected_months[j] = numeric_month[i]
-                    j = j + 1
-                mask_h = ((dfd1['month'].astype(int) == int(selected_months[0])) | (
-                        dfd1['month'].astype(int) == int(selected_months[1])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[2])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[3])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[4])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[5])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[6])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[7])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[8])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[9])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[10])) | (
-                                  dfd1['month'].astype(int) == int(selected_months[11]))
-                          )
-                dfd1 = dfd1.loc[mask_h]
-
-        selection_x = st.radio("Breakdown based on", ["year", "month", "none"])
-        if selection_x == "none":
-            dfd1['none'] = 1
-
-        # interval selection in the scatter plot
-        dfd1_copy = dfd1
-        for i in range(len(selected_assets_temp)):
-            pts = alt.selection(type="interval", encodings=["x"])
-            dfd1 = dfd1_copy
-            mask_d1 = (dfd1['Asset'] == selected_assets[i])
-            dfd1 = dfd1.loc[mask_d1]
-            # left panel: scatter plot
-            points = alt.Chart(dfd1).mark_point(filled=False).encode(
-                x=alt.X('dayhoursminutes(Time):O', scale=alt.Scale(zero=False)),
-                y=alt.Y(column_name_1, scale=alt.Scale(zero=False)),
-                color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-                opacity=alt.condition(pts, alt.value(1), alt.value(0.1))
-            ).add_selection(pts).properties(
-                width=650,
-                height=350
-            )
-            st.subheader(f"{selected_assets[i]}")
-            # st.write(points)
-            # right panel: histogram
-            mag = (alt.Chart(dfd1).mark_bar().encode(
-                x=alt.X(column_name_1, bin=True),
-                y=alt.Y('count()', stack=True),
-                # opacity=alt.condition(pts, alt.value(1), alt.value(0)),
-                color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-
-            ).properties(
-                width=300,
-                height=300
-            ).transform_filter(
-                pts
-            ))
-
-            # st.write(mag)
-            # build the chart:
-            scatter = alt.hconcat(points, mag).transform_bin(f"{column_name_1} binned", field=column_name_1,
-                                                             bin=alt.Bin(maxbins=20))
-            st.write(scatter)
+                # st.write(mag)
+                # build the chart:
+                scatter = alt.hconcat(points, mag).transform_bin(f"{column_name_1} binned", field=column_name_1,
+                                                                 bin=alt.Bin(maxbins=20))
+                st.write(scatter)
 
 
 
 #########PIPE DATA EXPLORATION#################################################
 if selected == "Pipe Data Exploration":
     st.title(selected)
+    df_pipe = load_pipe("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
+    df_pipe_orig = df_pipe.drop("FID", axis=1)
 
     with st.sidebar:
         st.header(':gear: Settings')
@@ -1205,6 +1207,8 @@ if selected == "Pipe Data Exploration":
 
 if selected == "Water Usage Exploration":
     st.title(selected)
+    dfu = load_usage("https://1drv.ms/u/s!AnhaxtVMqKpxgok8LpetXE7Hfb1www?e=JQu4W0")
+
     ymd_range = [datetime.date(2019, 1, 1), datetime.date(2019, 1, 2)]
     with st.sidebar:
         st.header(':gear: Settings')
@@ -1310,7 +1314,7 @@ if selected == "Water Usage Exploration":
         tooltip=['Time', 'Zone', column_name_u]
     ).properties(
         width=700, height=370
-    ).interactive().add_selection(
+    ).add_selection(
         selection
     )
     bars = (
@@ -1442,6 +1446,9 @@ if selected == "Water Usage Exploration":
 
 if selected == "Pipe-Break Prediction":
     st.title(selected)
+    df_pipe = load_pipe("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
+    df_pipe_orig = df_pipe.drop("FID", axis=1)
+
     # define a blank data frame
     def get_classification_report(y_test, y_pred):
         from sklearn import metrics
@@ -1530,7 +1537,7 @@ if selected == "Pipe-Break Prediction":
         if bool_learn:
             # defining predictor and response variables
             st.subheader("Training Report")
-            ##df_75 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok6rtmFtgqn1vUt_Q?e=el633O")
+            df_75 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok6rtmFtgqn1vUt_Q?e=el633O")
             # df_75['MATERIAL_ENCO'] =le_material.fit_transform(df_75['MATERIAL'])
             Pred = df_75[features].drop(['ID', 'Breaks_No'], axis=1)
             Resp = df_75.Breaks_No
@@ -1549,7 +1556,7 @@ if selected == "Pipe-Break Prediction":
             st.write(report_train_df)
 
             st.subheader("Testing Report")
-            ##df_25 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok7oN74-f1eTi8BFw?e=yei0ZH")
+            df_25 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok7oN74-f1eTi8BFw?e=yei0ZH")
             X_4test = df_25[features].drop(['ID', 'Breaks_No'], axis=1)
             yReal_4test = df_25.Breaks_No
             yPrediction_4test = regressor.predict(X_4test)  # Prediction on unseen test data
