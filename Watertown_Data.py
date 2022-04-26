@@ -1531,7 +1531,7 @@ if selected == "Pipe-Break Prediction":
         st.subheader("Learn Model")
         st.write(
             "The data model is split in 75% train and 25% test dataset; the 75% train data is further split into 60% for training and 40% for validation. The ML model is then applied on 25% of unseen data for prediction.")
-        bool_learn = st.checkbox("Learn the Model:")
+        bool_learn = st.checkbox("Learn the Model:", value=True)
         if bool_learn:
             # defining predictor and response variables
             st.subheader("Training Report")
