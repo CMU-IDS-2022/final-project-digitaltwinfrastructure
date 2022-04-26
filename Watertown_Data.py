@@ -261,6 +261,7 @@ if selected == "Water Network Exploration":
             title="Click on the legend to show/hide lines:")
         st.subheader("Water level charts")
         st.write(chart)
+        del df1
 
 
     if ((selected_options[0]) == "Flow"): # if option_2:Flow
@@ -347,6 +348,8 @@ if selected == "Water Network Exploration":
         )
         st.subheader("Flow charts")
         st.write(chart)
+        del df2
+
 
     if (selected_options[0]) == "Pressure":  # if option_3:: #Pressure
         del selected_options[0]
@@ -443,6 +446,7 @@ if selected == "Water Network Exploration":
         )
         st.subheader("Pressure charts")
         st.write(chart)
+        del df3
         #st.write(Pressure_Line_Chart)
 
 
@@ -873,6 +877,9 @@ if selected == "Water Network Exploration":
             scatter = alt.hconcat(points, mag).transform_bin(f"{column_name_1} binned", field=column_name_1,
                                                              bin=alt.Bin(maxbins=20))
             st.write(scatter)
+        del dfd1
+        del dfd1
+    del dfd
 
 
 #########PIPE DATA EXPLORATION#################################################
@@ -883,11 +890,11 @@ if selected == "Pipe Data Exploration":
         st.header(':gear: Settings')
         st.subheader('Choose the units')
         # SET UNITS
-        diameter_unit = st.selectbox("Choose Diameter units:", ["in", "mm"])
-        length_unit = st.selectbox("Choose Length units:", ["ft", "m"])
-        discharge_unit = st.selectbox("Choose Discharge units:", ["gpm", "lps"])
-        pressure_unit = st.selectbox("Choose Presure units:", ["psi", "kg/cm^2"])
-        groundwater_unit = st.selectbox("Choose Groundwater Depth units:", ["ft", "m"])
+        diameter_unit = st.selectbox("Diameter:", ["in", "mm"])
+        length_unit = st.selectbox("Length:", ["ft", "m"])
+        discharge_unit = st.selectbox("Discharge:", ["gpm", "lps"])
+        pressure_unit = st.selectbox("Pressure:", ["psi", "kg/cm^2"])
+        groundwater_unit = st.selectbox("Groundwater Depth:", ["ft", "m"])
     st.header("Data Tables")
     if st.checkbox("Show Raw Data"):
         with st.spinner('Writing in progress...'):
