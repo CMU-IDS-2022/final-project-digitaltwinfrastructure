@@ -69,7 +69,7 @@ def load_usage(url):
     mask_d1 = (dfu['Water usage (kgal)'] < 250)
     dfu = dfu.loc[mask_d1]
     return dfu
-@st.cache(allow_output_mutation=True)
+@st.cache
 def load_pipe(url):
     dfu = pd.read_csv(create_onedrive_directdownload(url))
     return dfu
@@ -88,9 +88,8 @@ def set_default():
 df = load_sensor("https://1drv.ms/u/s!AnhaxtVMqKpxgoYMvc0XlCSMCQcHYQ?e=NGl6vK")
 df_org = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-df_pipe = load_pipe("https://1drv.ms/u/s!AnhaxtVMqKpxgok4QNQUaXhgXB7Q6A?e=4cKqlv")
-df_pipe_orig = df_pipe.drop("Shape_Leng", axis = 1)
-df_pipe = df_pipe.drop("Shape_Leng", axis = 1)
+df_pipe = load_pipe("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
+df_pipe_orig = df_pipe.drop("FID", axis = 1)
 
 dfu = load_usage("https://1drv.ms/u/s!AnhaxtVMqKpxgok8LpetXE7Hfb1www?e=JQu4W0")
 df_75 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok6rtmFtgqn1vUt_Q?e=el633O")
