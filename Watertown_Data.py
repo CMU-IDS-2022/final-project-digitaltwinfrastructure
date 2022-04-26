@@ -5,6 +5,8 @@ import base64
 import altair as alt
 import datetime
 import pytz
+from sklearn.decomposition import PCA
+
 from streamlit_option_menu import option_menu
 
 from sklearn.cluster import KMeans
@@ -261,7 +263,6 @@ if selected == "Water Network Exploration":
             title="Click on the legend to show/hide lines:")
         st.subheader("Water level charts")
         st.write(chart)
-        del df1
 
 
     if ((selected_options[0]) == "Flow"): # if option_2:Flow
@@ -446,7 +447,6 @@ if selected == "Water Network Exploration":
         )
         st.subheader("Pressure charts")
         st.write(chart)
-        del df3
         #st.write(Pressure_Line_Chart)
 
 
@@ -509,7 +509,7 @@ if selected == "Water Network Exploration":
 
         with colR:
             selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-            selected_months_temp = st.multiselect('Select months:', ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], default = ['January', 'February', 'March'])
+            selected_months_temp = st.multiselect('Select months:', ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], default = ['January', 'February'])
             dfd1['month'] = dfd1['Time'].dt.month
             if len(selected_months_temp) != 0:
                 j = 0
@@ -652,7 +652,7 @@ if selected == "Water Network Exploration":
             selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
             selected_months_temp = st.multiselect('Select months :',
                                                   ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-                                                   'August', 'September', 'October', 'November', 'December'],default = ['January', 'February', 'March'])
+                                                   'August', 'September', 'October', 'November', 'December'],default = ['January', 'February'])
             dfd1['month'] = dfd1['Time'].dt.month
             if len(selected_months_temp) != 0:
                 j = 0
@@ -813,7 +813,7 @@ if selected == "Water Network Exploration":
             selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
             selected_months_temp = st.multiselect('Select months',
                                                   ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-                                                   'August', 'September', 'October', 'November', 'December'], default = ['January', 'February', 'March'])
+                                                   'August', 'September', 'October', 'November', 'December'], default = ['January', 'February'])
             dfd1['month'] = dfd1['Time'].dt.month
             if len(selected_months_temp) != 0:
                 j = 0
@@ -877,9 +877,7 @@ if selected == "Water Network Exploration":
             scatter = alt.hconcat(points, mag).transform_bin(f"{column_name_1} binned", field=column_name_1,
                                                              bin=alt.Bin(maxbins=20))
             st.write(scatter)
-        del dfd1
-        del dfd1
-    del dfd
+
 
 
 #########PIPE DATA EXPLORATION#################################################
@@ -1242,7 +1240,7 @@ if selected == "Water Usage Exploration":
         selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
         selected_months_temp = st.multiselect('Select months ',
                                               ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-                                               'September', 'October', 'November', 'December'], default = ['January', 'February', 'March'])
+                                               'September', 'October', 'November', 'December'], default = ['January', 'February'])
         dfu['month'] = dfu['Time'].dt.month
         if len(selected_months_temp) != 0:
             numeric_month = {
@@ -1444,8 +1442,6 @@ if selected == "Water Usage Exploration":
 
 if selected == "Pipe-Break Prediction":
     st.title(selected)
-
-
     # define a blank data frame
     def get_classification_report(y_test, y_pred):
         from sklearn import metrics
@@ -1453,7 +1449,6 @@ if selected == "Pipe-Break Prediction":
         df_classification_report = pd.DataFrame(report).transpose()
         df_classification_report = df_classification_report
         return df_classification_report
-
 
     dtreg = pd.DataFrame()
 
@@ -1626,3 +1621,242 @@ if selected == "Pipe-Break Prediction":
                 st.header(int(prediction_output.item(0)))
             else:
                 st.header("?")
+
+
+if selected == "Water Network Management":
+    st.title(selected)
+    km_df = pd.DataFrame()
+    features1 = ['ID', 'Breaks_No']
+    with st.sidebar:
+        st.header(':gear: Settings')
+
+        # Input Present Year for Calculating Age
+        st.subheader("Year settings")
+        year = st.number_input("Current year for calculating age", value=2022)
+        df_pipe_orig['Age'] = (year - df_pipe_orig['Install_ye'])
+
+        st.subheader('Select features')
+        # SELECT FEATURES FOR Classification
+
+        col1, col2 = st.columns((1, 1))
+        with col1:
+            Dia_CheckBox = st.checkbox("Diameter", value=True)
+            if Dia_CheckBox:
+                features1.append('Diameter')
+
+            Len_CheckBox = st.checkbox("Length", value=True)
+            if Len_CheckBox:
+                features1.append('LENGTH_FT')
+
+            Cus_CheckBox = st.checkbox("No of Customers", value=True)
+            if Cus_CheckBox:
+                features1.append('Ncustomers')
+
+        with col2:
+            Dis_CheckBox = st.checkbox("Discharge", value=True)
+            if Dis_CheckBox:
+                features1.append('Qmax_gpm')
+
+            Pre_CheckBox = st.checkbox("Pressure", value=True)
+            if Pre_CheckBox:
+                features1.append('Pmax_Psi')
+
+            Sph_CheckBox = st.checkbox("Bed-Soil pH", value=True)
+            if Sph_CheckBox:
+                features1.append('PH')
+
+            Age_CheckBox = st.checkbox("Age", value=True)
+            if Age_CheckBox:
+                features1.append('Age')
+
+        # Reading Original Dataframe with Selected Features
+        km_df = df_pipe_orig[features1]
+
+        # handling outliers and scaling features
+        scaler = MinMaxScaler()
+        # scaling breaks
+        km_df['Scaled Breaks'] = scaler.fit_transform(km_df[['Breaks_No']])
+
+        features_pca = ['Scaled Breaks']
+
+        if Dia_CheckBox:
+            IQR_Dia = km_df.Diameter.quantile(0.75) - km_df.Diameter.quantile(0.25)
+            lower_diameter = km_df['Diameter'].quantile(0.25) - (IQR_Dia * 1.5)
+            upper_diameter = km_df['Diameter'].quantile(0.25) + (IQR_Dia * 3)
+            km_df.loc[km_df['Diameter'] <= lower_diameter, 'Diameter'] = lower_diameter
+            km_df.loc[km_df['Diameter'] >= upper_diameter, 'Diameter'] = upper_diameter
+            km_df['Scaled Diameter'] = scaler.fit_transform(km_df[['Diameter']])
+            features_pca.append('Diameter')
+        if Len_CheckBox:
+            IQR_Len = km_df.LENGTH_FT.quantile(0.75) - km_df.LENGTH_FT.quantile(0.25)
+            lower_length = km_df['LENGTH_FT'].quantile(0.25) - (IQR_Len * 1.5)
+            upper_length = km_df['LENGTH_FT'].quantile(0.25) + (IQR_Len * 1.5)
+            km_df.loc[km_df['LENGTH_FT'] <= lower_length, 'LENGTH_FT'] = lower_length
+            km_df.loc[km_df['LENGTH_FT'] >= upper_length, 'LENGTH_FT'] = upper_length
+            km_df['Scaled Length'] = scaler.fit_transform(km_df[['LENGTH_FT']])
+            features_pca.append('Scaled Length')
+        if Cus_CheckBox:
+            IQR_Cus = km_df.Ncustomers.quantile(0.75) - km_df.Ncustomers.quantile(0.25)
+            lower_customer = km_df['Ncustomers'].quantile(0.25) - (IQR_Cus * 3)
+            upper_customer = km_df['Ncustomers'].quantile(0.25) + (IQR_Cus * 3)
+            km_df.loc[km_df['Ncustomers'] <= lower_customer, 'Ncustomers'] = lower_customer
+            km_df.loc[km_df['Ncustomers'] >= upper_customer, 'Ncustomers'] = upper_customer
+            km_df['Scaled No of Customers'] = scaler.fit_transform(km_df[['Ncustomers']])
+            features_pca.append('Scaled No of Customers')
+        if Dis_CheckBox:
+            IQR_GPM = km_df.Qmax_gpm.quantile(0.75) - km_df.Qmax_gpm.quantile(0.25)
+            lower_gpm = km_df['Qmax_gpm'].quantile(0.25) - (IQR_GPM * 1.5)
+            upper_gpm = km_df['Qmax_gpm'].quantile(0.25) + (IQR_GPM * 1.5)
+            km_df.loc[km_df['Qmax_gpm'] <= lower_gpm, 'Qmax_gpm'] = lower_gpm
+            km_df.loc[km_df['Qmax_gpm'] >= upper_gpm, 'Qmax_gpm'] = upper_gpm
+            km_df['Scaled Discharge'] = scaler.fit_transform(km_df[['Qmax_gpm']])
+            features_pca.append('Scaled Discharge')
+        if Pre_CheckBox:
+            IQR_PSI = km_df.Pmax_Psi.quantile(0.75) - km_df.Pmax_Psi.quantile(0.25)
+            lower_psi = km_df['Pmax_Psi'].quantile(0.25) - (IQR_PSI * 1.5)
+            upper_psi = km_df['Pmax_Psi'].quantile(0.25) + (IQR_PSI * 1.5)
+            km_df.loc[km_df['Pmax_Psi'] <= lower_psi, 'Pmax_Psi'] = lower_psi
+            km_df.loc[km_df['Pmax_Psi'] >= upper_psi, 'Pmax_Psi'] = upper_psi
+            km_df['Scaled Pressure'] = scaler.fit_transform(km_df[['Pmax_Psi']])
+            features_pca.append('Scaled Pressure')
+        if Sph_CheckBox:
+            IQR_PH = km_df.PH.quantile(0.75) - km_df.PH.quantile(0.25)
+            lower_ph = km_df['PH'].quantile(0.25) - (IQR_PH * 1.5)
+            upper_ph = km_df['PH'].quantile(0.25) + (IQR_PH * 1.5)
+            km_df.loc[km_df['PH'] <= lower_ph, 'PH'] = lower_ph
+            km_df.loc[km_df['PH'] >= upper_ph, 'PH'] = upper_ph
+            km_df['Scaled Bed-Soil pH'] = scaler.fit_transform(km_df[['PH']])
+            features_pca.append('Scaled Bed-Soil pH')
+        if Age_CheckBox:
+            IQR_Age = km_df.Age.quantile(0.75) - km_df.Age.quantile(0.25)
+            lower_age = km_df['Age'].quantile(0.25) - (IQR_Age * 3)
+            upper_age = km_df['Age'].quantile(0.25) + (IQR_Age * 3)
+            km_df.loc[km_df['Age'] <= lower_age, 'Age'] = lower_age
+            km_df.loc[km_df['Age'] >= upper_age, 'Age'] = upper_age
+            km_df['Scaled Age'] = scaler.fit_transform(km_df[['Age']])
+            features_pca.append('Scaled Age')
+        # writing success message
+        st.success("Outliers handled and features scaled successfully.")
+
+    if st.checkbox("Show Raw Data"):
+        with st.spinner('Writing in progress...'):
+            st.write(df_pipe)
+        st.success('Done!')
+
+    if st.checkbox("Show Transformed Data"):
+        with st.spinner('Writing in progress...'):
+            st.write(km_df.sort_values('Breaks_No', axis=0, ascending=False))
+        st.success('Done!')
+
+    if st.button("Run Clustering Algorithm"):
+        # dataframe for pca and kmeans
+        km_df_transformed = km_df[features_pca]
+        pca = PCA(n_components=2)
+        pca.fit(km_df_transformed)
+        scores_pca = pca.fit_transform(km_df_transformed)
+        km = KMeans(n_clusters=3, random_state=0)
+        y_predict_clusters = km.fit_predict(scores_pca)
+
+        km_df['Cluster'] = y_predict_clusters
+
+        Chart_Hist = alt.Chart(km_df).mark_bar(tooltip=True).encode(
+            alt.X('Cluster:O'),
+            y='count()',
+            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
+        ).properties(
+            width=300).interactive()
+        st.write(Chart_Hist)
+
+        ## Diameter Metal Nonmetal LENGTH_FT Breaks_No Age Ncustomers PH Pmax_Psi Qmax_gpm
+        ChartDia = alt.Chart(km_df).mark_boxplot(size=50, extent=0).encode(
+            x=alt.X('Cluster:O', sort='-y'),
+            y=alt.Y('Scaled Diameter:Q'),
+            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2')),
+        ).properties(
+            width=300).interactive()
+        line11 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
+            y=alt.Y('mean(Scaled Diameter):Q'),
+            x=alt.X('Cluster:O', title=None, sort='-y')
+        )
+
+        ChartLen = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
+            x=alt.X('Cluster:O', sort='-y'),
+            y=alt.Y('Scaled Length:Q'),
+            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
+        ).properties(
+            width=300).interactive()
+        line14 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
+            y=alt.Y('mean(Scaled Length):Q'),
+            x=alt.X('Cluster:O', title=None, sort='-y')
+        )
+
+        ChartBreak = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
+            x=alt.X('Cluster:O', sort='-y'),
+            y=alt.Y('Scaled Breaks:Q'),
+            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
+        ).properties(
+            width=300).interactive()
+        line15 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
+            y=alt.Y('mean(Scaled Breaks):Q'),
+            x=alt.X('Cluster:O', title=None, sort='-y')
+        )
+
+        ChartAge = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
+            x=alt.X('Cluster:O', sort='-y'),
+            y=alt.Y('Scaled Age:Q'),
+            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
+        ).properties(
+            width=300).interactive()
+        line16 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
+            y=alt.Y('mean(Scaled Age):Q'),
+            x=alt.X('Cluster:O', title=None, sort='-y')
+        )
+
+        ChartCust = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
+            x=alt.X('Cluster:O', sort='-y'),
+            y=alt.Y('Scaled No of Customers:Q'),
+            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
+        ).properties(
+            width=300).interactive()
+        line17 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
+            y=alt.Y('mean(Scaled No of Customers):Q'),
+            x=alt.X('Cluster:O', title=None, sort='-y')
+        )
+
+        ChartPH = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
+            x=alt.X('Cluster:O', sort='-y'),
+            y=alt.Y('Scaled Bed-Soil pH:Q'),
+            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
+        ).properties(
+            width=300).interactive()
+        line18 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
+            y=alt.Y('mean(Scaled Bed-Soil pH):Q'),
+            x=alt.X('Cluster:O', title=None, sort='-y')
+        )
+
+        ChartPmax = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
+            x=alt.X('Cluster:O', sort='-y'),
+            y=alt.Y('Scaled Pressure:Q'),
+            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
+        ).properties(
+            width=300).interactive()
+        line19 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
+            y=alt.Y('mean(Scaled Pressure):Q'),
+            x=alt.X('Cluster:O', title=None, sort='-y')
+        )
+
+        ChartQmax = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
+            x=alt.X('Cluster:O', sort='-y'),
+            y=alt.Y('Scaled Discharge:Q'),
+            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
+        ).properties(
+            width=300).interactive()
+        line20 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
+            y=alt.Y('mean(Scaled Discharge):Q'),
+            x=alt.X('Cluster:O', title=None, sort='-y')
+        )
+
+        # st.altair_chart((ChartDia+line11 | ChartLen+line14 | ChartBreak+line15 | ChartAge+line16 | ChartCust+line17 | ChartPH+line18 | ChartPmax+line19 | ChartQmax+line20).resolve_scale(y='independent'))
+        st.altair_chart((
+                                    ChartDia + line11 | ChartLen + line14 | ChartBreak + line15 | ChartAge + line16 | ChartCust + line17 | ChartPH + line18 | ChartPmax + line19 | ChartQmax + line20).resolve_scale(
+            x='independent'))
