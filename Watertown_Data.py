@@ -1773,7 +1773,8 @@ if selected == "Water Network Management":
             y='count()',
             color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
         ).properties(
-            width=300).interactive()
+            height = 200,
+            width=200).interactive()
         st.write(Chart_Hist)
 
         ## Diameter Metal Nonmetal LENGTH_FT Breaks_No Age Ncustomers PH Pmax_Psi Qmax_gpm
@@ -1782,7 +1783,8 @@ if selected == "Water Network Management":
             y=alt.Y('Scaled Diameter:Q'),
             color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2')),
         ).properties(
-            width=300).interactive()
+            height = 200,
+            width=200).interactive()
         line11 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
             y=alt.Y('mean(Scaled Diameter):Q'),
             x=alt.X('Cluster:O', title=None, sort='-y')
@@ -1793,7 +1795,8 @@ if selected == "Water Network Management":
             y=alt.Y('Scaled Length:Q'),
             color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
         ).properties(
-            width=300).interactive()
+            height = 200,
+            width=200).interactive()
         line14 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
             y=alt.Y('mean(Scaled Length):Q'),
             x=alt.X('Cluster:O', title=None, sort='-y')
@@ -1804,7 +1807,8 @@ if selected == "Water Network Management":
             y=alt.Y('Scaled Breaks:Q'),
             color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
         ).properties(
-            width=300).interactive()
+            height = 200,
+            width=200).interactive()
         line15 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
             y=alt.Y('mean(Scaled Breaks):Q'),
             x=alt.X('Cluster:O', title=None, sort='-y')
@@ -1815,7 +1819,8 @@ if selected == "Water Network Management":
             y=alt.Y('Scaled Age:Q'),
             color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
         ).properties(
-            width=300).interactive()
+            height = 200,
+            width=200).interactive()
         line16 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
             y=alt.Y('mean(Scaled Age):Q'),
             x=alt.X('Cluster:O', title=None, sort='-y')
@@ -1826,7 +1831,8 @@ if selected == "Water Network Management":
             y=alt.Y('Scaled No of Customers:Q'),
             color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
         ).properties(
-            width=300).interactive()
+            height = 200,
+            width=200).interactive()
         line17 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
             y=alt.Y('mean(Scaled No of Customers):Q'),
             x=alt.X('Cluster:O', title=None, sort='-y')
@@ -1837,7 +1843,8 @@ if selected == "Water Network Management":
             y=alt.Y('Scaled Bed-Soil pH:Q'),
             color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
         ).properties(
-            width=300).interactive()
+            height = 200,
+            width=200).interactive()
         line18 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
             y=alt.Y('mean(Scaled Bed-Soil pH):Q'),
             x=alt.X('Cluster:O', title=None, sort='-y')
@@ -1848,7 +1855,8 @@ if selected == "Water Network Management":
             y=alt.Y('Scaled Pressure:Q'),
             color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
         ).properties(
-            width=300).interactive()
+            height = 200,
+            width=200).interactive()
         line19 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
             y=alt.Y('mean(Scaled Pressure):Q'),
             x=alt.X('Cluster:O', title=None, sort='-y')
@@ -1859,7 +1867,8 @@ if selected == "Water Network Management":
             y=alt.Y('Scaled Discharge:Q'),
             color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
         ).properties(
-            width=300).interactive()
+            height = 200,
+            width=200).interactive()
         line20 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
             y=alt.Y('mean(Scaled Discharge):Q'),
             x=alt.X('Cluster:O', title=None, sort='-y')
