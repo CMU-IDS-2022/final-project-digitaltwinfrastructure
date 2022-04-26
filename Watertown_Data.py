@@ -902,9 +902,7 @@ if selected == "Pipe Data Exploration":
         st.success('Done!')
 
     st.header("Charts")
-    selected_options = st.multiselect('Select attributes ', ['Diameter', 'Length', 'Material', 'Installation Year',
-                                                             'Discharge', 'Pressure', 'Pipe Bed-Soil Type',
-                                                             'Groundwater Depth'], default= ['Diameter', 'Installation Year'])
+    selected_options = st.multiselect('Select attributes ', ['Diameter', 'Length', 'Material', 'Installation Year', 'Discharge', 'Pressure', 'Pipe Bed-Soil Type', 'Groundwater Depth'], default = ['Diameter', 'Installation Year', 'Discharge',  'Pipe Bed-Soil Type'])
     selected_options.append("None")
 
     # if "Data Exploration" is selected in the main menu do the following
@@ -1131,8 +1129,8 @@ if selected == "Pipe Data Exploration":
         ).interactive()
 
         Pipe_DisYOI_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(f"sum(Discharge ({unit_c})):Q", scale=alt.Scale(zero=True), sort='y'),
-            alt.Y(YOI_unit, scale=alt.Scale(zero=True), sort='-x'),
+            alt.X(f"sum(Discharge ({unit_c})):Q", scale=alt.Scale(zero=True)),
+            alt.Y(YOI_unit, scale=alt.Scale(zero=True), sort='y'),
             alt.Color('Material', legend=alt.Legend(title="Material")),
             tooltip=[f"sum(Discharge ({unit_c})):Q", 'Material', 'count()']
         ).properties(
