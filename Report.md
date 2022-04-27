@@ -24,6 +24,9 @@ KMeans clustering is deployed for classifying pipes. The attributes considered a
 
 ## Results
 
+## Acknowledgement
+The authors thanks and acknowledges the support of Dr. Tom Walski and Shar Govindan from Bentley Systems Inc.(www.bentley.com) for sharing the dataset for this project. A special thanks to Dr. Adam Perer- the course instructor, and the course TAs: Venkat Sivaraman, Aditi Sharma, and Jingyi Zhang.
+
 ## Discussion
 
 ## Future Work
