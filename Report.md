@@ -14,13 +14,13 @@ Every year water utilities world wide spend million of dollars on reparing and r
 ## Methods
 
 ***Pipe Data Exploration***:
-Pipe properties such as diameter, length, bed-soil soil pH, number of customers, discharge, pressure, age, and number of breaks are used to create visualization charts. The charts are created using altair and deployed using Streamlit.
+Pipe properties such as diameter, length, bed-soil pH, number of customers, discharge, pressure, age, and number of breaks are used to create visualization charts. The charts are created using altair and deployed using Streamlit.
 
 ***Pipe-Breaks Prediction***:
-The aglorithm used here is Decision-Tree Regressor as it yeilds better results comparatively. The algorithm uses pipe data viz. diameter, length, bed-soil soil pH, number of customers, discharge, pressure, and age as predictor variables, and number of breaks as the response variable. Streamlit is used to deploy the app on the web.
+The aglorithm used here is Decision-Tree Regressor as it yeilds better results comparatively. The algorithm uses pipe data viz. diameter, length, bed-soil pH, number of customers, discharge, pressure, and age as predictor variables, and number of breaks as the response variable. Streamlit is used to deploy the app on the web.
 
 ***Water Network Management***:
-KMeans clustering is deployed for classifying pipes. The attributes considered are diameter, length, bed-soil soil pH, number of customers, discharge, pressure, age, and number of breaks. The visualizations are made using Altair and deployed on the web using Streamlit.
+KMeans clustering is deployed for classifying pipes. The attributes considered are diameter, length, bed-soil pH, number of customers, discharge, pressure, age, and number of breaks. The visualizations are made using Altair and deployed on the web using Streamlit.
 
 ## Results
 
