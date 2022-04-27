@@ -4,7 +4,7 @@
 **Video URL**: TODO
 **Project Team Members**: Devashri Karve, Maral Doctor Arastoo, Tanay Kulkarni
 
-**Abstract**: Short (~250 words) abstract of the concrete data science problem and how the solutions addresses the problem.
+**Abstract**: 
 Every year water utilities world wide spend million of dollars on reparing and replacing water infrastructure assets. These aging assets result in many issues including but not limited to non-revenue water (NRW), leakages, etc. The subsurface (buried) assets such as pipes are also exposed to severe aging and the condition assessment of such inaccessible assets is challenging. Utilities face a major challenge to understand the inspection priority, predict breaks, or detect anamolies in consumption. This project tries to address these critical issues using a web interface that interactively visualizes sensed pressure, flow, and tank water levels; and pipe metadata viz. diameter, material, year of installation, number of reported breaks, etc. The web-app also uses advanced machine learning in the background to predict the future number of breaks on any given pipe sample and also categorizes all the pipes to identify the inspection priority based on assessed condition.
 
 ## Introduction
