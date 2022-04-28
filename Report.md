@@ -14,15 +14,16 @@ Many infrastructure software companies have started offering digital solutions f
 
 
 ## Methods
-
 ***Pipe Data Exploration***:
-Pipe properties such as diameter, length, bed-soil pH, number of customers, discharge, pressure, age, and number of breaks are used to create visualization charts. The charts are created using altair and deployed using Streamlit.
+The raw pipe Dataframe has pipe features such as diameter, length, bed-soil pH, number of customers, discharge, pressure, age, and number of breaks. These features are used to create visualization charts that reveal more insights on these features. The user interface has a main window and a sidebar. The ‘settings’ on the sidebar allows to interactively change the units of various features and shift between US Customary and Systems International (SI) units. The chart on the main window responsively updates as per the set units.
 
 ***Pipe-Breaks Prediction***:
-The aglorithm used here is Decision-Tree Regressor. The algorithm uses pipe data viz. diameter, length, bed-soil pH, number of customers, discharge, pressure, and age as predictor variables, and number of breaks as the response variable. Streamlit is used to deploy the app on the web.
+The pipe Dataframe is split in 75% model and 25% test Datasets. The 75% model dataset is further split into 60% train and 40% validation datasets. The ML model is trained on the train dataset and then checked against the validation data. The validated model is then applied to the remaining 25% of the unseen test data for prediction. The Decision-Tree Regressor algorithm uses pipe data viz. diameter, length, bed-soil pH, number of customers, discharge, pressure, and age as predictor variables, and number of breaks as the response variable.
+The sidebar allows the user to interactively select predictor variables of their choice to train - test the model. The training and testing model reports are displayed. The precision, recall, f1-scores, and support. 
 
 ***Water Network Management***:
-KMeans clustering is deployed for classifying pipes. The attributes considered are diameter, length, bed-soil pH, number of customers, discharge, pressure, age, and number of breaks. The visualizations are made using Altair and deployed on the web using Streamlit.
+KMeans clustering is deployed for classifying pipes. There are a total of 1219 pipe data rows in the original dataframe; also consisting of feature outliers. Therefore, to preserve data, the outliers are snapped to upper and lower bounds at 25% Inter-quartile range and 75% inter-quartile range, respectively. K-Means is a distance-based algorithm and therefore scaling all the features is quintessential. The features are then scaled between 0 to 1. The user can interactively select attributes from a list of features viz., diameter, length, bed-soil pH, number of customers, discharge, pressure, age, and number of breaks. 
+
 
 ## Results
 
