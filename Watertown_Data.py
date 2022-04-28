@@ -227,6 +227,7 @@ df_pipe[['Pmax_Psi']] = df_pipe[['Pmax_Psi']].astype(str).astype(float)
 df_pipe[['Dist_GWT']] = df_pipe[['Dist_GWT']].astype(str).astype(float)
 
 dfu = load("https://1drv.ms/u/s!AnhaxtVMqKpxgolMm2YgAiaWnYNRSg?e=owus29")
+dfu = dfu.loc[:, ~dfu.columns.str.contains('^Unnamed')]
 dfu['Time'] = pd.to_datetime(dfu['Time'], errors='coerce')
 
 numeric_month = {"January": 1,
@@ -967,7 +968,7 @@ if selected == "Water Usage Exploration":
     with colR:
         selected_months = st.multiselect('Select months:', ['January', 'February', 'March', 'April', 'May',
                                                             'June', 'July', 'August', 'September', 'October',
-                                                            'November', 'December'], default=['January', 'February'])
+                                                            'November', 'December'], default=['January', 'February', 'March'])
         dfu = mask_month(dfu, selected_months)
 
 
