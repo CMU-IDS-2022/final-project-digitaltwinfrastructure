@@ -234,21 +234,6 @@ numeric_month = {"January": 1,
                  "November": 11,
                  "December": 12}
 
-Reverse_numeric_month = {
-                    1: "January",
-                    2: "February",
-                    3: "March",
-                    4: "April",
-                    5: "May",
-                    6: "June",
-                    7: "July",
-                    8: "August",
-                    9: "September",
-                    10: "October",
-                    11: "November",
-                    12: "December"
-                }
-
 # define the main menu with its options
 with st.sidebar:
     selected = option_menu("Main Menu", ["Water Network Exploration", "Water Usage Exploration",
@@ -1065,7 +1050,9 @@ if selected == "Water Usage Exploration":
         month_index = zone_monthly_water_usage.index(max_water_usage) + 1
         month_string = "_"
         if (max_water_usage != 0):
-            month_string = Reverse_numeric_month[month_index]
+            key_list = list(numeric_month.keys())
+            val_list = list(numeric_month.values())
+            month_string = key_list[val_list.index(month_index)-1]
 
         st.subheader("__________")
         st.write(f"{n}")
