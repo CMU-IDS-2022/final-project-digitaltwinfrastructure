@@ -213,15 +213,9 @@ def def_distribution_chart(data, selected_asset, x, y, color, legend, condition1
 # Main Code
 df = load("https://1drv.ms/u/s!AnhaxtVMqKpxgolL9YaQaQcQqgtxBQ?e=xRNBhX")
 df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
-
 df_org = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-df_pipe = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
-df_pipe[['Diameter']] = df_pipe[['Diameter']].astype(float)
-df_pipe[['LENGTH_FT']] = df_pipe[['LENGTH_FT']].astype(str).astype(float)
-df_pipe[['Qmax_gpm']] = df_pipe[['Qmax_gpm']].astype(str).astype(float)
-df_pipe[['Pmax_Psi']] = df_pipe[['Pmax_Psi']].astype(str).astype(float)
-df_pipe[['Dist_GWT']] = df_pipe[['Dist_GWT']].astype(str).astype(float)
+df_pipe = load("https://1drv.ms/u/s!AnhaxtVMqKpxgolNXFKIubxIMqzLBw?e=Sr5GBG")
 
 dfu = load("https://1drv.ms/u/s!AnhaxtVMqKpxgolMm2YgAiaWnYNRSg?e=owus29")
 dfu = dfu.loc[:, ~dfu.columns.str.contains('^Unnamed')]
