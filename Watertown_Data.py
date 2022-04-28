@@ -755,9 +755,9 @@ if selected == "Pipe Data Exploration":
 
         Pipe_DiaLength_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X(dia_col_name, scale=alt.Scale(zero=True)),
-            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=True)),
+            alt.Y(f"mean({len_col_name}):Q", scale=alt.Scale(zero=True)),
             alt.Color(mat_col_name, legend=alt.Legend(title="Material")),
-            tooltip=[dia_col_name, mat_col_name, f"sum({len_col_name}):Q", 'count()']
+            tooltip=[dia_col_name, mat_col_name, f"mean({len_col_name}):Q", 'count()']
         ).properties(
             title=f"{dia_col_name} vs. {len_col_name}",
             width=450, height=250
@@ -779,9 +779,9 @@ if selected == "Pipe Data Exploration":
 
         Pipe_ZoneLength_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X('ZONE', scale=alt.Scale(zero=True), sort='-y'),
-            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=True)),
+            alt.Y(f"mean({len_col_name}):Q", scale=alt.Scale(zero=True)),
             alt.Color('Material', legend=alt.Legend(title="Material")),
-            tooltip=['ZONE', f"sum({len_col_name}):Q", 'Material', 'count()']
+            tooltip=['ZONE', f"mean({len_col_name}):Q", 'Material', 'count()']
         ).properties(
             title=f"Zone vs. {len_col_name}",
             width=450, height=250
@@ -794,9 +794,9 @@ if selected == "Pipe Data Exploration":
         # plot the chart
         Pipe_Mat_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X(mat_col_name, type='nominal', scale=alt.Scale(zero=True), sort='-y'),
-            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=True)),
+            alt.Y(f"mean({len_col_name}):Q", scale=alt.Scale(zero=True)),
             alt.Color(mat_col_name, legend=alt.Legend(title="Material")),
-            tooltip=[mat_col_name, f"sum({len_col_name}):Q", 'count()']
+            tooltip=[mat_col_name, f"mean({len_col_name}):Q", 'count()']
         ).properties(
             title=f"Material vs. {len_col_name}",
             width=450, height=250
@@ -804,9 +804,9 @@ if selected == "Pipe Data Exploration":
 
         Pipe_MatBreak_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X(mat_col_name, type='nominal', scale=alt.Scale(zero=True), sort='-y'),
-            alt.Y('sum(Breaks_No)', type='quantitative', scale=alt.Scale(zero=True), title="Sum of No. of Pipe Breaks"),
+            alt.Y('mean(Breaks_No)', type='quantitative', scale=alt.Scale(zero=True), title="Mean of No. of Pipe Breaks"),
             alt.Color(mat_col_name, legend=alt.Legend(title="Material")),
-            tooltip=[mat_col_name, 'sum(Breaks_No):Q', 'count()']
+            tooltip=[mat_col_name, 'mean(Breaks_No):Q', 'count()']
         ).properties(
             title="Material vs. Pipe Breaks reported between (2015-2020)",
             width=450, height=250
@@ -820,10 +820,10 @@ if selected == "Pipe Data Exploration":
         # plot the chart
         Pipe_YOIMaterial_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X(year_col_name, type='nominal', scale=alt.Scale(zero=False), sort='-y'),
-            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=False)),
+            alt.Y(f"mean({len_col_name}):Q", scale=alt.Scale(zero=False)),
             # alt.Column(YOI_unit, type='ordinal'),
             alt.Color('Material', legend=alt.Legend(title="Material")),
-            tooltip=[year_col_name, f"sum({len_col_name})", 'Material', 'count()']
+            tooltip=[year_col_name, f"mean({len_col_name})", 'Material', 'count()']
         ).properties(
             title=f"{len_col_name} wise Installation Year (High to Low)",
             width=450, height=250
@@ -832,7 +832,7 @@ if selected == "Pipe Data Exploration":
         # plot the chart
         Pipe_YOIDiameter_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X(year_col_name, type='nominal', scale=alt.Scale(zero=False), sort='x'),
-            alt.Y('sum(Breaks_No):Q', scale=alt.Scale(zero=True), title="Sum of No. of Pipe Breaks"),
+            alt.Y('mean(Breaks_No):Q', scale=alt.Scale(zero=True), title="Mean of No. of Pipe Breaks"),
             alt.Color('Material', legend=alt.Legend(title="Material")),
             tooltip=[year_col_name, 'count()']
         ).properties(
@@ -857,7 +857,7 @@ if selected == "Pipe Data Exploration":
 
         Pipe_DisBreak_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=10).encode(
             alt.X(discharge_col_name, type='quantitative', scale=alt.Scale(zero=True, type='quantile')),
-            alt.Y('sum(Breaks_No):Q', scale=alt.Scale(zero=False, type='sqrt'), title="Sum of No. of Pipe Breaks"),
+            alt.Y('mean(Breaks_No):Q', scale=alt.Scale(zero=False, type='sqrt'), title="Mean of No. of Pipe Breaks"),
             alt.Color(discharge_col_name, type='quantitative', sort="descending", legend=alt.Legend(title=f"{discharge_col_name}")),
             tooltip=[discharge_col_name, 'count()']
         ).properties(
@@ -866,10 +866,10 @@ if selected == "Pipe Data Exploration":
         ).interactive()
 
         Pipe_DisYOI_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(f"sum({discharge_col_name}):Q", scale=alt.Scale(zero=True)),
+            alt.X(f"mean({discharge_col_name}):Q", scale=alt.Scale(zero=True)),
             alt.Y(year_col_name, scale=alt.Scale(zero=True), sort='y'),
             alt.Color('Material', legend=alt.Legend(title="Material")),
-            tooltip=[f"sum({discharge_col_name}):Q", 'Material', 'count()']
+            tooltip=[f"mean({discharge_col_name}):Q", 'Material', 'count()']
         ).properties(
             title=f"{discharge_col_name} wise Installation Year (High to Low)",
             width=450, height=250
@@ -896,9 +896,9 @@ if selected == "Pipe Data Exploration":
         # plot the chart
         Pipe_BS_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X(ph_col_name, scale=alt.Scale(zero=False)),
-            alt.Y('sum(Breaks_No):Q', scale=alt.Scale(zero=False), title="Sum of No. of Pipe Breaks"),
+            alt.Y('mean(Breaks_No):Q', scale=alt.Scale(zero=False), title="Mean of No. of Pipe Breaks"),
             alt.Color('Material', legend=alt.Legend(title="Bed-Soil pH")),
-            tooltip=[ph_col_name, 'sum(Breaks_No):Q', mat_col_name, 'count()']
+            tooltip=[ph_col_name, 'mean(Breaks_No):Q', mat_col_name, 'count()']
         ).properties(
             title="Soil pH vs. Pipe Breaks reported between (2015-2020)",
             width=650, height=450
@@ -911,10 +911,10 @@ if selected == "Pipe Data Exploration":
         Pipe_GWD_Histogram_Chart = alt.Chart(df_pipe).mark_circle(size=20).encode(
             alt.X(ph_col_name, scale=alt.Scale(zero=False), sort='x'),
             alt.Y(gwd_col_name, type='quantitative', scale=alt.Scale(zero=False, type='sqrt')),
-            alt.Color('sum(Breaks_No):Q', legend=alt.Legend(title="Total Breaks (2015-2020)"),
+            alt.Color('mean(Breaks_No):Q', legend=alt.Legend(title="Total Breaks (2015-2020)"),
                       scale=alt.Scale(scheme='reds')),
-            tooltip=[gwd_col_name, 'sum(Breaks_No):Q', mat_col_name, 'count()'],
-            size='sum(Breaks_No):Q',
+            tooltip=[gwd_col_name, 'mean(Breaks_No):Q', mat_col_name, 'count()'],
+            size='mean(Breaks_No):Q',
         ).properties(
             title=f"{gwd_col_name} vs. Soil pH",
             width=650, height=450
