@@ -4,11 +4,10 @@ import streamlit as st
 import base64
 import altair as alt
 import datetime
-import pytz
-from sklearn.decomposition import PCA
+#import pytz
 
 from streamlit_option_menu import option_menu
-
+from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import MinMaxScaler
 import sklearn.metrics as metrics
@@ -19,11 +18,15 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import accuracy_score, explained_variance_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeRegressor
 
-#Change the layout of screen
+from operator import itemgetter
+
+
 st.set_page_config(layout="wide")
+
 
 # Functions
 # This function makes it possible to download the data from onedrive by creating a downloadable link
@@ -35,46 +38,10 @@ def create_onedrive_directdownload (onedrive_link):
 
 # Cache is used to enhance speed. So the data is downloaded once even when the code is executed multiple times.
 # Load function reads the csv file from onedrive
-@st.cache
+@st.cache(allow_output_mutation=True)
 def load(url):
     df = pd.read_csv(create_onedrive_directdownload(url))
     return df
-
-def load_sensor(url):
-    df = pd.read_csv(create_onedrive_directdownload(url))
-    df_org = df
-    # Dataframe is processed here. But later I will replace the data file with the processed one.
-    # Time colomn is changed to datetime format.
-    df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
-
-    # Dummy colomns are generated to be used for sorting based on time.
-    df['year_sort'] = df['Time'].dt.year
-    df['month_sort'] = df['Time'].dt.month
-    df['day_sort'] = df['Time'].dt.day
-    df['hour_sort'] = df['Time'].dt.hour
-    df['min_sort'] = df['Time'].dt.minute
-    df = df.sort_values(by=['year_sort', 'month_sort', 'day_sort', 'hour_sort', 'min_sort'])
-    # Removing dummy colomns
-    df = df.drop(columns=['year_sort', 'month_sort', 'day_sort', 'hour_sort', 'min_sort'])
-    #df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
-    df = df.reset_index(drop=True)
-    df = df.drop(columns=['WTP PMP-1_PumpStatus','Well PMP-3_PumpStatus','Well PMP-1_PumpStatus', 'Well PMP-1_RelativeSpeed', 'Well PMP-1_WirePower_kW','Well PMP-2_PumpStatus', 'Well PMP-2_RelativeSpeed', 'Well PMP-2_WirePower_kW', 'Well PMP-3_RelativeSpeed', 'Well PMP-3_WirePower_kW', 'WTP PMP-1_RelativeSpeed', 'WTP PMP-1_WirePower_kW', 'WTP PMP-2_PumpStatus', 'WTP PMP-2_RelativeSpeed', 'WTP PMP-2_WirePower_kW', 'WTP PMP-3_PumpStatus', 'WTP PMP-3_RelativeSpeed', 'WTP PMP-3_WirePower_kW'])
-
-    return df
-
-@st.cache
-def load_usage(url):
-    dfu = pd.read_csv(create_onedrive_directdownload(url))
-    dfu = dfu.rename(columns={'ID': 'Customer ID', 'Billing month': 'Time', 'Value': 'Water usage (kgal)'})
-    dfu['Time'] = pd.to_datetime(dfu['Time'], errors='coerce')
-    dfu = dfu.drop(['Units'], axis=1)
-    mask_d1 = (dfu['Water usage (kgal)'] < 250)
-    dfu = dfu.loc[mask_d1]
-    return dfu
-@st.cache
-def load_pipe(url):
-    dfu = pd.read_csv(create_onedrive_directdownload(url))
-    return dfu
 
 # Used to specify end date in case of empty end date input from user.
 def set_default():
@@ -85,28 +52,195 @@ def set_default():
         # maximum
         ymd_range[1] = datetime.date(2023, 12, 31)
 
-#Main Code
-# load water network data
+def change_unit(data, column_name, quantity, unit):
+    data[[column_name]] = data[[column_name]].astype(float)
+
+    coef = 1
+    if quantity == "water level":
+        if unit == 'meter':
+            unit_symbol = 'm'
+            coef = 0.3048
+        else:
+            unit_symbol = 'ft'
+    elif quantity == "flow":
+        if unit == 'gallon per minute':
+            unit_symbol = 'gpm'
+        elif unit == 'cubic meter per second':
+            unit_symbol = 'm^3/sec'
+            coef = 0.0000630902
+        elif unit == 'cubic foot per second':
+            unit_symbol = 'ft^3/sec'
+            coef = 0.0022280093
+        elif unit == 'acre-foot per day':
+            unit_symbol = 'ac*ft/day'
+            coef = 0.0044191742
+        elif unit == 'acre-inch per hour':
+            unit_symbol = 'ac*in/hour'
+            coef = 0.0026536140977965
+    elif quantity == "pressure":
+        if unit == 'pressure per square inch':
+            unit_symbol = 'psi'
+        elif unit == 'meter of head':
+            unit_symbol = 'm'
+            coef = 0.70324961490205
+        elif unit == 'kilogram per square centimeter':
+            unit_symbol = 'kg/cm^2'
+            coef = 0.070307
+    elif quantity == "diameter":
+        if unit == 'mm':
+            unit_symbol = 'mm'
+            coef = 25.4
+        else:
+            unit_symbol = 'in'
+    elif ((quantity == "length") | (quantity == "ground water depth")):
+        if unit == 'meter':
+            unit_symbol = 'm'
+            coef = 0.3048
+        else:
+            unit_symbol = 'ft'
+    elif quantity == "discharge":
+        if unit == 'liter per second':
+            unit_symbol = 'lps'
+            coef = 0.0631
+        else:
+            unit_symbol = 'gpm'
+    elif quantity == "water usage":
+        if water_usage_unit == 'kilogallon':
+            unit_symbol = 'kgal'
+            coef = 0.0631
+        elif unit == 'gallon':
+            unit_symbol = 'gal'
+            coef = 1000
+        elif unit == 'cubic meter':
+            unit_symbol = 'm^3'
+            coef = 3.79
+        elif unit == 'cubic foot':
+            unit_symbol = 'ft^3'
+            coef = 133.68
+        elif unit == 'centum cubic foot':
+            unit_symbol = 'ccf'
+            coef = 1.34
+    data[[column_name]] = data[[column_name]] * coef
+    return data, unit_symbol
 
 
-#dfu = load_usage("https://1drv.ms/u/s!AnhaxtVMqKpxgok8LpetXE7Hfb1www?e=JQu4W0")
-#df_75 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok6rtmFtgqn1vUt_Q?e=el633O")
-#df_25 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok7oN74-f1eTi8BFw?e=yei0ZH")
+def mask_year(df, selected_years):
+    selected_years = [int(i) for i in selected_years]
+    df['year'] = df['Time'].dt.year
+    mask = df['year'] == 0
+    for i in selected_years:
+        mask = (mask | (df['year'].astype(int) == i))
+    df = df.loc[mask]
+    return df
 
-numeric_month = {
-                    "January": "1",
-                    "February": "2",
-                    "March": "3",
-                    "April": "4",
-                    "May": "5",
-                    "June": "6",
-                    "July": "7",
-                    "August":"8",
-                    "September": "9",
-                    "October": "10",
-                    "November":"11",
-                    "December":"12"
-                }
+
+def rename_months(df):
+    df['month'] = df['month'].astype(str)
+    df['month'] = df['month'].replace(
+        {"1": "January", "2": "February", "3": "March", "4": "April", "5": "May", "6": "June",
+         "7": "July", "8": "August", "9": "September", "10": "October", "11": "November",
+         "12": "December"})
+    return df
+
+def mask_month(df, selected_months):
+    selected_months_numeric = []
+    df['month'] = df['Time'].dt.month
+    mask = df['month'] == 0
+    for i in selected_months:
+        selected_months_numeric.append(numeric_month[i])
+    for i in selected_months_numeric:
+        mask = (mask | (df['month'].astype(int) == i))
+    df = df.loc[mask]
+    df = rename_months(df)
+    return df
+
+
+def def_line_chart(data, x, y, scale_zero_x, scale_zero_y, color, legend_title, condition1_val, condition2_val,
+                   selection, tooltip, width, height):
+    chart = alt.Chart(data).mark_line().encode(
+        alt.X(x, scale=alt.Scale(zero=scale_zero_x)),
+        alt.Y(y, scale=alt.Scale(zero=scale_zero_y)),
+        alt.Color(color, legend=alt.Legend(title=legend_title)),
+        opacity=alt.condition(selection, condition1_val, condition2_val),
+        tooltip=tooltip
+    ).properties(
+        width=width, height=height
+    ).interactive().add_selection(
+        selection
+    )
+    return chart
+
+
+def def_bars(data, x, y, scale_zero_x, label_y, color, selection, extent):
+    bars = alt.Chart(data).mark_bar().encode(
+        x=alt.X(f"mean({x})", scale=alt.Scale(zero=scale_zero_x)),
+        y=alt.Y(y, axis=alt.Axis(labels=label_y)),
+        color=alt.Color(color),
+    ).transform_filter(selection)
+    error_bars = alt.Chart().mark_errorbar(extent=extent).encode(
+        x=alt.X(f"mean({x})", scale=alt.Scale(zero=scale_zero_x)),
+        y=y
+    )
+    bars = alt.layer(bars, error_bars, data=data).transform_filter(selection)
+
+    return bars
+def def_distribution_chart(data, selected_asset, x, y, color, legend, condition1_value, condition2_value, selection,
+                       width_point, height_point, y_bar, width_bar, height_bar, bin, stack, maxbins):
+    # left panel: scatter plot
+
+    points = alt.Chart(data).mark_point(filled=False).encode(
+        x=alt.X(x, scale=alt.Scale(zero=False)),
+        y=alt.Y(y, scale=alt.Scale(zero=False)),
+        color=alt.Color(color, legend=alt.Legend(title=legend)),
+        opacity=alt.condition(selection, condition1_value, condition2_value)
+    ).add_selection(selection).properties(
+        width=width_point,
+        height=height_point
+    )
+    st.subheader(f"{selected_asset}")
+    # right panel: histogram
+    mag = (alt.Chart(data).mark_bar().encode(
+        x=alt.X(y, bin=bin),
+        y=alt.Y(y_bar, stack=stack),
+        color=alt.Color(color, legend=alt.Legend(title=legend)),
+    ).properties(
+        width=width_bar,
+        height=height_bar
+    ).transform_filter(
+        selection
+    ))
+    chart = alt.hconcat(points, mag).transform_bin(f"{y} binned",
+                                                   field=y, bin=alt.Bin(maxbins=maxbins))
+    return chart
+
+
+
+# Main Code
+df = load("https://1drv.ms/u/s!AnhaxtVMqKpxgolL9YaQaQcQqgtxBQ?e=xRNBhX")
+df_org = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+
+df_pipe = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
+df_pipe[['Diameter']] = df_pipe[['Diameter']].astype(float)
+df_pipe[['LENGTH_FT']] = df_pipe[['LENGTH_FT']].astype(str).astype(float)
+df_pipe[['Qmax_gpm']] = df_pipe[['Qmax_gpm']].astype(str).astype(float)
+df_pipe[['Pmax_Psi']] = df_pipe[['Pmax_Psi']].astype(str).astype(float)
+df_pipe[['Dist_GWT']] = df_pipe[['Dist_GWT']].astype(str).astype(float)
+
+dfu = load("https://1drv.ms/u/s!AnhaxtVMqKpxgolMm2YgAiaWnYNRSg?e=owus29")
+dfu['Time'] = pd.to_datetime(dfu['Time'], errors='coerce')
+
+numeric_month = {"January": 1,
+                 "February": 2,
+                 "March": 3,
+                 "April": 4,
+                 "May": 5,
+                 "June": 6,
+                 "July": 7,
+                 "August": 8,
+                 "September": 9,
+                 "October": 10,
+                 "November": 11,
+                 "December": 12}
 
 Reverse_numeric_month = {
                     1: "January",
@@ -123,20 +257,17 @@ Reverse_numeric_month = {
                     12: "December"
                 }
 
-# define the main menu with two options ["Data Exploration", 'Water Network Management']
+# define the main menu with its options
 with st.sidebar:
-    selected = option_menu("Main Menu", ["Water Network Exploration", "Water Usage Exploration", "Pipe Data Exploration", "Pipe-Break Prediction", "Water Network Management"],
-               icons=['bi bi-bounding-box-circles', 'bi bi-bezier', 'droplet-half', 'bi bi-exclamation-triangle-fill',
-                      'bi bi-columns-gap', 'person-lines-fill'], menu_icon="cast",
-               default_index=0)
+    selected = option_menu("Main Menu", ["Water Network Exploration", "Water Usage Exploration",
+                                         "Pipe Data Exploration", "Pipe-Break Prediction", "Water Network Management"],
+                           icons=['bi bi-bounding-box-circles', 'bi bi-bezier', 'droplet-half',
+                                  'bi bi-exclamation-triangle-fill','bi bi-columns-gap', 'person-lines-fill'],
+                           menu_icon="cast", default_index=0)
 
-#if "Data Exploration" is selected in the main menu do the following
-############################################################WATER NETWORK EXPLORATION##################################################
-
+# if "Water Network Exploration" is selected in the main menu do the following
 if selected == "Water Network Exploration":
     st.title(selected)
-    df = load_sensor("https://1drv.ms/u/s!AnhaxtVMqKpxgoYMvc0XlCSMCQcHYQ?e=NGl6vK")
-    df_org = df.loc[:, ~df.columns.str.contains('^Unnamed')]
     df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
     # The default value of date range
@@ -146,39 +277,37 @@ if selected == "Water Network Exploration":
     if st.checkbox("Show Raw Data"):
         with st.spinner('Writing in progress...'):
             st.write(df)
-        #st.success('Done!')
 
     with st.sidebar:
         st.header(':gear: Settings')
-
         st.subheader('Choose the time span:')
         # Date selector with default values and min and max values specified.
-        ymd_range_temp = st.date_input("Start day - End day", [datetime.date(2019, 1, 1), datetime.date(2019, 1, 2)], min_value=datetime.date(2019, 1, 1), max_value=datetime.date(2023, 12, 31), on_change= set_default())
+        ymd_range_temp = st.date_input("Start day - End day", [datetime.date(2019, 1, 1), datetime.date(2019, 1, 2)],
+                                       min_value=datetime.date(2019, 1, 1), max_value=datetime.date(2023, 12, 31),
+                                       on_change=set_default())
 
-        if (len(ymd_range_temp) == 2):
+        if len(ymd_range_temp) == 2:
             ymd_range = ymd_range_temp
         else:
             # if user only selected starting date write this message.
-            st.error('Error: You must choose an end date. Otherwise, the default value for the end date is used for filtering the data.')
+            st.error('Error: You must choose an end date. Otherwise, the default value for the end date is used for'
+                     ' filtering the data.')
 
         # divide sidebar to two columns to write end and start next to each other
         col1, col2 = st.columns((1, 1))
         with col1:
             # take time of the start day as input
-            hms_start_day = st.time_input("Time of the start day", datetime.time(8, 45))
+            hms_start_day = st.time_input("Time of the start day", datetime.time(8, 30))
         with col2:
             # take time of the end day as input
             hms_end_day = st.time_input("Time of the end day", datetime.time(8, 30))
 
-        st.subheader('Choose units:') # could be flow, pressure and water level
-
+        st.subheader('Choose units:')  # For flow, pressure and water level
         water_level_unit = st.selectbox("Water level:", ["foot", "meter"])
-
         flow_unit = st.selectbox("Flow:",
                                  ["gallon per minute", "cubic meter per second", "cubic foot per second",
                                   "acre-inch per hour",
                                   "acre-foot per day"])
-
         pressure_unit = st.selectbox("Pressure:", ["pressure per square inch", "meter of head"])
 
         # combine date and time of day to be able to mask dataset
@@ -194,79 +323,45 @@ if selected == "Water Network Exploration":
             st.write(df)
 
     st.header("Charts")
-    selected_options = st.multiselect('Select charts ', ['Water level', 'Flow', 'Pressure'], default = ['Water level', 'Flow', 'Pressure'])
-    selected_options.append("None")
+    selected_options = st.multiselect('Select charts ', ['Water level', 'Flow', 'Pressure'],
+                                      default=['Water level', 'Flow', 'Pressure'])
 
     # must be used to avoid time shifting is charts
     df['Time'] = df['Time'].dt.tz_localize('EST')
 
-    if ((selected_options[0]) == "Water level"): #option_1: #water level
-        del selected_options[0]
-
+    if "Water level" in selected_options:
         # rename the columns to the name that must be shown in the legend of chart (only name of the asset should remain)
         # save the result in dummy dataset called df1
-        df1 = df.rename(columns={'Bald Hill Tank_Level_ft': 'Bald Hill Tank',
+        df_temp = df.rename(columns={'Bald Hill Tank_Level_ft': 'Bald Hill Tank',
                                 'Scovill Tank_Level_ft':'Scovill Tank'})
 
         # reshape the data so that the values of different assets are all in the same column.
-         # we need this reformatting for plotting based on color.
-        df1 = df1[['Time', 'Bald Hill Tank', 'Scovill Tank']].melt('Time', var_name='Asset', value_name='Water_Level')
+        # we need this reformatting for plotting based on color.
+        df_temp = df_temp[['Time', 'Bald Hill Tank', 'Scovill Tank']].melt('Time', var_name='Asset', value_name='Water_Level')
 
-        # change values based on selected unit.
-        if water_level_unit == 'meter':
-            unit_1 = 'm'
-            df1[['Water_Level']] = df1[['Water_Level']] * 0.3048
-        else:
-            unit_1 = 'ft'
+
+        df_temp, unit_symbol  = change_unit(df_temp, 'Water_Level', 'water level', water_level_unit)
 
         # rename the column so that it contains the selected unit. This name is shown on the y axis
-        column_name_1 = f"Water Level ({unit_1})"
-        df1 = df1.rename(columns={'Water_Level': column_name_1})
+        column_name_new = f"Water Level ({unit_symbol})"
+        df_temp = df_temp.rename(columns={'Water_Level': column_name_new})
 
         # selection to allow highlight when click on legend
         selection = alt.selection_multi(fields=['Asset'], bind='legend')
 
-        # plot the chart
-        Water_Level_Line_Chart = alt.Chart(df1).mark_line().encode(
-            alt.X('Time', scale=alt.Scale(zero=False)),
-            alt.Y(column_name_1, scale=alt.Scale(zero=False)),
-            alt.Color('Asset:N', legend=alt.Legend(title="Asset")),
-            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
-            tooltip=['Time', 'Asset', column_name_1]
-        ).properties(
-            width=700, height=370
-        ).interactive().add_selection(
-            selection
-        )
+        Water_Level_Line_Chart = def_line_chart(df_temp, 'Time', column_name_new, False, False, 'Asset:N', "Asset", alt.value(1), alt.value(0.1),
+                       selection, ['Time', 'Asset', column_name_new], 700, 370)
 
         # Create bar plot that responds to selection based on legend.
         # bar show mean values and standard deviation in selected time span.
-        bars = (
-            alt.Chart(df1).mark_bar().encode(
-                y=alt.Y("Asset",axis=alt.Axis(labels=False)),
-                color=alt.Color("Asset:O"),
-                x=alt.X(f"mean({column_name_1})", scale=alt.Scale(zero = False)),
-            ).transform_filter(selection)
-        )
-
-        # stdv of data
-        error_bars = alt.Chart().mark_errorbar(extent='ci').encode(
-            x=alt.X(f"mean({column_name_1})", scale=alt.Scale(zero=False)),
-            y="Asset"
-        )
-
-        bars = alt.layer(bars, error_bars, data=df1).transform_filter(selection)
-
-        # plot charts next to each other horizontally
+        bars = def_bars(df_temp, column_name_new, "Asset", False, False, "Asset:O", selection, 'ci')
         chart = alt.hconcat(Water_Level_Line_Chart, bars).properties(
             title="Click on the legend to show/hide lines:")
         st.subheader("Water level charts")
         st.write(chart)
 
-
-    if ((selected_options[0]) == "Flow"): # if option_2:Flow
-        del selected_options[0]
-        df2 = df.rename(columns={'Bald Hill Tank_Net_Flow_Out_gpm' : 'Bald Hill Tank',
+    if "Flow" in selected_options:
+        df_temp = df.rename(columns={'Bald Hill Tank_Net_Flow_Out_gpm' : 'Bald Hill Tank',
                                 'PRV-1_Flow_gpm': 'PRV-1',
                                 'PRV-2_Flow_gpm': 'PRV-2',
                                 'PRV-3_Flow_gpm': 'PRV-3',
@@ -284,77 +379,35 @@ if selected == "Water Network Exploration":
                                 'WTP PMP-3_Flow_gpm': 'WTP PMP-3',
                                 'WTP Station Discharge_Flow_gpm' : 'WTP Station'})
 
-        df2 = df2[['Time', 'Bald Hill Tank', 'PRV-1',
+        df_temp = df_temp[['Time', 'Bald Hill Tank', 'PRV-1',
                   'PRV-2', 'PRV-3', 'PRV-4', 'PRV-5',
                   'PRV-6', 'PRV-7', 'Well PMP-1',
                   'Well PMP-2', 'Well PMP-3', 'Well Station',
                   'WTP PMP-1', 'WTP PMP-2', 'WTP PMP-3',
                   'WTP Station', 'School']].melt('Time', var_name='Asset', value_name='Flow')
 
-        if flow_unit == 'gallon per minute':
-            unit_2 = 'gpm'
-        elif flow_unit == 'cubic meter per second':
-            unit_2 = 'm^3/sec'
-            df2[['Flow']] = df2[['Flow']] * 0.0000630902
-        elif flow_unit == 'cubic foot per second':
-            unit_2 = 'ft^3/sec'
-            df2[['Flow']] = df2[['Flow']] * 0.0022280093
-        elif flow_unit == 'acre-foot per day':
-            unit_2 = 'ac*ft/day'
-            df2[['Flow']] = df2[['Flow']] * 0.0044191742
-        elif flow_unit == 'acre-inch per hour':
-            unit_2 = 'ac*in/hour'
-            df2[['Flow']] = df2[['Flow']] * 0.0026536140977965
+        df_temp, unit_symbol  = change_unit(df_temp, 'Flow', 'flow', flow_unit)
+        column_name_new = f"Flow ({unit_symbol})"
+        df_temp = df_temp.rename(columns={'Flow': column_name_new})
 
-        df2 = df2.rename(columns={'Flow' : f'Flow ({unit_2})'})
-
-
-        column_name_2 = f"Flow ({unit_2})"
-
-        # selection to allow highlight of genre when click on legend
+        # selection to allow highlight when click on legend
         selection = alt.selection_multi(fields=['Asset'], bind='legend')
 
-        # scatterplot showing the correlation between two features for all genres
-        Flow_Line_Chart = alt.Chart(df2).mark_line().encode(
-            x=alt.X('Time', scale=alt.Scale(zero=False)),
-            y=alt.Y(column_name_2, scale=alt.Scale(zero=False)),
-            color=alt.Color('Asset:N', legend=alt.Legend(title="Asset")),
-            opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
-            tooltip=['Time', 'Asset', column_name_2]
-        ).properties(
-            width=700, height=370
-        ).interactive().add_selection(
-            selection
-        )
-        bars = (
-            alt.Chart(df2).mark_bar().encode(
-                y=alt.Y("Asset", axis=alt.Axis(labels=False)),
-                color=alt.Color("Asset:O"),
-                x=alt.X(f"mean({column_name_2})", scale=alt.Scale(zero=False)),
-            ).transform_filter(selection)
-        )
+        Flow_Line_Chart = def_line_chart(df_temp, 'Time', column_name_new, False, False, 'Asset:N', "Asset",
+                                         alt.value(1), alt.value(0.1), selection,
+                                         ['Time', 'Asset', column_name_new], 700, 370)
 
-        error_bars = alt.Chart().mark_errorbar(extent='ci').encode(
-            x=alt.X(f"mean({column_name_2})", scale=alt.Scale(zero=False)),
-            y="Asset"
-        )
-
-        bars = alt.layer(bars, error_bars, data=df2).transform_filter(selection)
-
-
-        # Concatenate bar plot and scatter plot vertically
+        # Create bar plot that responds to selection based on legend.
+        # bar show mean values and standard deviation in selected time span.
+        bars = def_bars(df_temp, column_name_new, "Asset", False, False, "Asset:O", selection, 'ci')
         chart = alt.hconcat(Flow_Line_Chart, bars).properties(
             title="Click on the legend to show/hide lines:"
         )
         st.subheader("Flow charts")
         st.write(chart)
-        del df2
 
-
-    if (selected_options[0]) == "Pressure":  # if option_3:: #Pressure
-        del selected_options[0]
-
-        df3 = df.rename(columns={'PRV-1_FromPressure_psi' : 'PRV-1 (from)',
+    if "Pressure" in selected_options:
+        df_temp = df.rename(columns={'PRV-1_FromPressure_psi' : 'PRV-1 (from)',
                                  'PRV-2_FromPressure_psi': 'PRV-2 (from)',
                                  'PRV-3_FromPressure_psi': 'PRV-3 (from)',
                                  'PRV-4_FromPressure_psi': 'PRV-4 (from)',
@@ -383,7 +436,7 @@ if selected == "Water Network Exploration":
                                  'WTP PMP-3_SuctionPressure_psi': 'WTP PMP-3 (suction)'
                                  })
 
-        df3 = df3[['Time', 'PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
+        df_temp = df_temp[['Time', 'PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
                   'PRV-4 (from)', 'PRV-5 (from)', 'PRV-6 (from)', 'PRV-7 (from)',
                   'PRV-1 (to)', 'PRV-2 (to)', 'PRV-3 (to)','PRV-4 (to)',
                   'PRV-5 (to)', 'PRV-6 (to)', 'PRV-7 (to)', 'Well (discharge)', 'Well (suction)',
@@ -393,334 +446,163 @@ if selected == "Water Network Exploration":
                   'WTP (discharge)', 'WTP (suction)', 'WTP PMP-1 (suction)', 'WTP PMP-2 (suction)',
                   'WTP PMP-3 (suction)']].melt('Time', var_name='Asset', value_name='Pressure')
 
+        df_temp, unit_symbol = change_unit(df_temp, 'Pressure', 'pressure', pressure_unit)
+        column_name_new = f"Pressure ({unit_symbol})"
+        df_temp = df_temp.rename(columns={'Pressure': column_name_new})
 
-        if pressure_unit == 'pressure per square inch':
-            unit_3 = 'psi'
-        elif pressure_unit == 'meter of head':
-            unit_3 = 'm'
-            df3[['Pressure']] = df3[['Pressure']] * 0.70324961490205
-
-        df3 = df3.rename(columns={'Pressure' : f'Pressure ({unit_3})'})
-
-
-        column_name_3 = f"Pressure ({unit_3})"
-
-        # selection to allow highlight of genre when click on legend
+        # selection to allow highlight when click on legend
         selection = alt.selection_multi(fields=['Asset'], bind='legend')
-        brush = alt.selection_interval(encodings=['x'])
-        #.add_selection(
-        #    brush
-        #).transform_filter(brush)
-        # scatterplot showing the correlation between two features for all genres
-        Pressure_Line_Chart = alt.Chart(df3).mark_line().encode(
-            x=alt.X('Time', scale=alt.Scale(zero=False)),
-            y=alt.Y(column_name_3, scale=alt.Scale(zero=False)),
-            color=alt.Color('Asset:N', legend=alt.Legend(title="Asset")),
-            opacity=alt.condition(selection,alt.value(1), alt.value(0.1)),
-            tooltip=['Time', 'Asset', column_name_3]
-        ).properties(
-            width=700, height=370
-        ).add_selection(
-            selection
+        Pressure_Line_Chart = def_line_chart(df_temp, 'Time', column_name_new, False, False, 'Asset:N', "Asset",
+                                         alt.value(1), alt.value(0.1), selection,
+                                         ['Time', 'Asset', column_name_new], 700, 370)
+
+        # Create bar plot that responds to selection based on legend.
+        # bar show mean values and standard deviation in selected time span.
+        bars = def_bars(df_temp, column_name_new, "Asset", False, False, "Asset:O", selection, 'ci')
+        chart = alt.hconcat(Flow_Line_Chart, bars).properties(
+            title="Click on the legend to show/hide lines:"
         )
-
-        bars = (
-            alt.Chart(df3).mark_bar().encode(
-                y=alt.Y("Asset",axis=alt.Axis(labels=False)),
-                color=alt.Color("Asset:O"),
-                x=alt.X(f"mean({column_name_3})", scale=alt.Scale(zero=False)),
-            ).transform_filter(selection)
-        )
-
-        # stdv of data
-        error_bars = alt.Chart().mark_errorbar(extent='ci').encode(
-            x=alt.X(f"mean({column_name_3})", scale=alt.Scale(zero=False)),
-            y="Asset"
-        )
-
-        bars = alt.layer(bars, error_bars, data=df3).transform_filter(selection)
-
         # plot charts next to each other horizontally
         chart = alt.hconcat(Pressure_Line_Chart, bars).properties(
             title="Click on the legend to show/hide lines:"
         )
         st.subheader("Pressure charts")
         st.write(chart)
-        #st.write(Pressure_Line_Chart)
 
-
-###############################################################################################
-
+    # Explore the distribution of data
     st.header("Distributions")
     if st.checkbox("Explore distributions:"):
-        selected_options_dist = ["None","None","None"]
-        selected_options_dist_temp = st.multiselect('Select distribution variables ', ['Water level', 'Flow', 'Pressure'], default =  ['Water level', 'Flow', 'Pressure'])
-        j = 0
-        for i in selected_options_dist_temp:
-            selected_options_dist[j] = i
-            j = j + 1
+        selected_options_dist = st.multiselect('Select distribution variables ', ['Water level', 'Flow', 'Pressure'],
+                                               default=['Water level'])
 
-        dfd = df_org
-        # must be used to avoid time shifting is charts
-        dfd['Time'] = dfd['Time'].dt.tz_localize('EST')
-
-        if ((selected_options_dist[0] == "Water level") | (selected_options_dist[1] == "Water level") | (selected_options_dist[2] == "Water level")): #option_1: #water level
+        if "Water level" in selected_options_dist:
             st.subheader("Water Level")
-            dfd1 = dfd.rename(columns={'Bald Hill Tank_Level_ft': 'Bald Hill Tank',
+
+            df_temp = df_org
+            # must be used to avoid time shifting is charts
+
+            df_temp = df_temp.rename(columns={'Bald Hill Tank_Level_ft': 'Bald Hill Tank',
                                        'Scovill Tank_Level_ft': 'Scovill Tank'})
 
             # reshape the data so that the values of different assets are all in the same column.
             # we need this reformatting for plotting based on color.
-            dfd1 = dfd1[['Time', 'Bald Hill Tank', 'Scovill Tank']].melt('Time', var_name='Asset', value_name='Water_Level')
+            df_temp = df_temp[['Time', 'Bald Hill Tank', 'Scovill Tank']].melt('Time', var_name='Asset',
+                                                                               value_name='Water_Level')
 
             # change values based on selected unit.
-            if water_level_unit == 'meter':
-                unit_1 = 'm'
-                dfd1[['Water_Level']] = dfd1[['Water_Level']] * 0.3048
-            else:
-                unit_1 = 'ft'
+            df_temp, unit_symbol = change_unit(df_temp, 'Water_Level', 'water level', water_level_unit)
 
             # rename the column so that it contains the selected unit. This name is shown on the y axis
-            column_name_1 = f"Water Level ({unit_1})"
-            dfd1 = dfd1.rename(columns={'Water_Level': column_name_1})
+            column_name_new = f"Water Level ({unit_symbol})"
+            df_temp = df_temp.rename(columns={'Water_Level': column_name_new})
 
-            #del selected_options_dist[0]
             #Scatter and histogram
             colL, colM, colR = st.columns([1, 1, 1])
 
             with colL:
-                selected_assets = ["0", "0"]
-                selected_assets_temp = st.multiselect('Select assets:', ['Bald Hill Tank', 'Scovill Tank'], default = 'Bald Hill Tank')
-                j = 0
-                for i in selected_assets_temp:
-                    selected_assets[j] = i
-                    j = j + 1
-
+                selected_assets = st.multiselect('Select assets:', ['Bald Hill Tank', 'Scovill Tank'],
+                                                      default='Bald Hill Tank')
             with colM:
-                selected_years = ["0", "0", "0"]
-                selected_years_temp = st.multiselect('Select years:', ['2019', '2020', '2021'], default = "2019")
-                j = 0
-                for i in selected_years_temp:
-                    selected_years[j] = i
-                    j = j + 1
-                dfd1['year'] = dfd1['Time'].dt.year
-                mask_d1 = ((dfd1['year'].astype(int) == int(selected_years[0])) | (dfd1['year'] == int(selected_years[1])) | (dfd1['year'] == int(selected_years[2])))
-                dfd1 = dfd1.loc[mask_d1]
+                selected_years = st.multiselect('Select years:', ['2019', '2020', '2021'], default='2019')
+                df_temp = mask_year(df_temp, selected_years)
 
             with colR:
-                selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-                selected_months_temp = st.multiselect('Select months:', ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], default = ['January', 'February'])
-                dfd1['month'] = dfd1['Time'].dt.month
-                if len(selected_months_temp) != 0:
-                    j = 0
-                    for i in selected_months_temp:
-                        selected_months[j] = numeric_month[i]
-                        j = j + 1
-                    mask_h = ((dfd1['month'].astype(int) == int(selected_months[0])) | (
-                                dfd1['month'].astype(int) == int(selected_months[1])) | (
-                                dfd1['month'].astype(int) == int(selected_months[2])) | (
-                                dfd1['month'].astype(int) == int(selected_months[3])) | (
-                                dfd1['month'].astype(int) == int(selected_months[4])) | (
-                                dfd1['month'].astype(int) == int(selected_months[5])) | (
-                                dfd1['month'].astype(int) == int(selected_months[6])) | (
-                                dfd1['month'].astype(int) == int(selected_months[7])) | (
-                                dfd1['month'].astype(int) == int(selected_months[8])) | (
-                                dfd1['month'].astype(int) == int(selected_months[9])) | (
-                                dfd1['month'].astype(int) == int(selected_months[10])) | (
-                                dfd1['month'].astype(int) == int(selected_months[11]))
-                              )
-                    dfd1 = dfd1.loc[mask_h]
+                selected_months = st.multiselect('Select months:', ['January', 'February', 'March', 'April', 'May',
+                                                                    'June', 'July', 'August', 'September', 'October',
+                                                                    'November', 'December'],
+                                                                    default=['January', 'February'])
+                df_temp = mask_month(df_temp, selected_months)
 
 
-            selection_x = st.radio("Breakdown based on:", ["year", "month", "none"])
-            if selection_x == "none":
-                dfd1['none'] = 1
+            breakdown_selection = st.radio("Breakdown based on:", ["year", "month", "none"])
+            if breakdown_selection == "none":
+                df_temp['none'] = True
+            df_temp_copy = df_temp
+            selection = alt.selection(type="interval", encodings=["x"])
+            for i in selected_assets:
+                df_temp = df_temp_copy
+                mask = df_temp['Asset'] == i
+                df_temp = df_temp.loc[mask]
+                chart = def_distribution_chart(df_temp, i, 'dayhoursminutes(Time):O', column_name_new, f"{breakdown_selection}:N", breakdown_selection, alt.value(1), alt.value(0.1), selection, 650, 350, 'count()', 300, 300, True, True, 20)
+                st.write(chart)
 
-            # interval selection in the scatter plot
-            dfd1_copy = dfd1
-            for i in range(len(selected_assets_temp)):
-                pts = alt.selection(type="interval", encodings=["x"])
-                dfd1 = dfd1_copy
-                mask_d1 = (dfd1['Asset'] == selected_assets[i])
-                dfd1 = dfd1.loc[mask_d1]
-                # left panel: scatter plot
-                points = alt.Chart(dfd1).mark_point(filled=False).encode(
-                    x=alt.X('dayhoursminutes(Time):O', scale=alt.Scale(zero=False)),
-                    y=alt.Y(column_name_1, scale=alt.Scale(zero=False)),
-                    color = alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-                    opacity=alt.condition(pts, alt.value(1), alt.value(0.1))
-                ).add_selection(pts).properties(
-                    width=650,
-                    height=350
-                )
-                st.subheader(f"{selected_assets[i]}")
-                #st.write(points)
-                # right panel: histogram
-                mag = (alt.Chart(dfd1).mark_bar().encode(
-                    x=alt.X(column_name_1, bin=True),
-                    y=alt.Y('count()', stack= True),
-                    #opacity=alt.condition(pts, alt.value(1), alt.value(0)),
-                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-
-                ).properties(
-                    width=300,
-                    height=300
-                ).transform_filter(
-                    pts
-                ))
-
-
-                #st.write(mag)
-                # build the chart:
-                scatter = alt.hconcat(points,mag).transform_bin(f"{column_name_1} binned",field=column_name_1,bin=alt.Bin(maxbins=20))
-                st.write(scatter)
-        if ((selected_options_dist[0] == "Flow") | (selected_options_dist[1] == "Flow") | (
-                selected_options_dist[2] == "Flow")):
+        if "Flow" in selected_options_dist:
             st.subheader("Flow")
-            dfd1 = dfd.rename(columns={'Bald Hill Tank_Net_Flow_Out_gpm': 'Bald Hill Tank',
-                                     'PRV-1_Flow_gpm': 'PRV-1',
-                                     'PRV-2_Flow_gpm': 'PRV-2',
-                                     'PRV-3_Flow_gpm': 'PRV-3',
-                                     'PRV-4_Flow_gpm': 'PRV-4',
-                                     'PRV-5_Flow_gpm': 'PRV-5',
-                                     'PRV-6_Flow_gpm': 'PRV-6',
-                                     'PRV-7_Flow_gpm': 'PRV-7',
-                                     'School_Flow_gpm': 'School',
-                                     'Well PMP-1_Flow_gpm': 'Well PMP-1',
-                                     'Well PMP-2_Flow_gpm': 'Well PMP-2',
-                                     'Well PMP-3_Flow_gpm': 'Well PMP-3',
-                                     'Well Station Discharge_Flow_gpm': 'Well Station',
-                                     'WTP PMP-1_Flow_gpm': 'WTP PMP-1',
-                                     'WTP PMP-2_Flow_gpm': 'WTP PMP-2',
-                                     'WTP PMP-3_Flow_gpm': 'WTP PMP-3',
-                                     'WTP Station Discharge_Flow_gpm': 'WTP Station'})
+            df_temp = df_org
+            # must be used to avoid time shifting is charts
+            # reshape the data so that the values of different assets are all in the same column.
+            # we need this reformatting for plotting based on color.
+            df_temp = df_temp.rename(columns={'Bald Hill Tank_Net_Flow_Out_gpm': 'Bald Hill Tank',
+                                       'PRV-1_Flow_gpm': 'PRV-1',
+                                       'PRV-2_Flow_gpm': 'PRV-2',
+                                       'PRV-3_Flow_gpm': 'PRV-3',
+                                       'PRV-4_Flow_gpm': 'PRV-4',
+                                       'PRV-5_Flow_gpm': 'PRV-5',
+                                       'PRV-6_Flow_gpm': 'PRV-6',
+                                       'PRV-7_Flow_gpm': 'PRV-7',
+                                       'School_Flow_gpm': 'School',
+                                       'Well PMP-1_Flow_gpm': 'Well PMP-1',
+                                       'Well PMP-2_Flow_gpm': 'Well PMP-2',
+                                       'Well PMP-3_Flow_gpm': 'Well PMP-3',
+                                       'Well Station Discharge_Flow_gpm': 'Well Station',
+                                       'WTP PMP-1_Flow_gpm': 'WTP PMP-1',
+                                       'WTP PMP-2_Flow_gpm': 'WTP PMP-2',
+                                       'WTP PMP-3_Flow_gpm': 'WTP PMP-3',
+                                       'WTP Station Discharge_Flow_gpm': 'WTP Station'})
 
-            dfd1 = dfd1[['Time', 'Bald Hill Tank', 'PRV-1',
-                       'PRV-2', 'PRV-3', 'PRV-4', 'PRV-5',
-                       'PRV-6', 'PRV-7', 'Well PMP-1',
-                       'Well PMP-2', 'Well PMP-3', 'Well Station',
-                       'WTP PMP-1', 'WTP PMP-2', 'WTP PMP-3',
-                       'WTP Station', 'School']].melt('Time', var_name='Asset', value_name='Flow')
+            df_temp = df_temp[['Time', 'Bald Hill Tank', 'PRV-1',
+                         'PRV-2', 'PRV-3', 'PRV-4', 'PRV-5',
+                         'PRV-6', 'PRV-7', 'Well PMP-1',
+                         'Well PMP-2', 'Well PMP-3', 'Well Station',
+                         'WTP PMP-1', 'WTP PMP-2', 'WTP PMP-3',
+                         'WTP Station', 'School']].melt('Time', var_name='Asset', value_name='Flow')
 
-            if flow_unit == 'gallon per minute':
-                unit_2 = 'gpm'
-            elif flow_unit == 'cubic meter per second':
-                unit_2 = 'm^3/sec'
-                dfd1[['Flow']] = dfd1[['Flow']] * 0.0000630902
-            elif flow_unit == 'cubic foot per second':
-                unit_2 = 'ft^3/sec'
-                dfd1[['Flow']] = dfd1[['Flow']] * 0.0022280093
-            elif flow_unit == 'acre-foot per day':
-                unit_2 = 'ac*ft/day'
-                dfd1[['Flow']] = dfd1[['Flow']] * 0.0044191742
-            elif flow_unit == 'acre-inch per hour':
-                unit_2 = 'ac*in/hour'
-                dfd1[['Flow']] = dfd1[['Flow']] * 0.0026536140977965
+            # change values based on selected unit.
+            df_temp, unit_symbol = change_unit(df_temp, 'Flow', 'flow', flow_unit)
 
-            dfd1 = dfd1.rename(columns={'Flow': f'Flow ({unit_2})'})
+            # rename the column so that it contains the selected unit. This name is shown on the y axis
+            column_name_new = f"Flow ({unit_symbol})"
+            df_temp = df_temp.rename(columns={'Flow': column_name_new})
 
-            column_name_1 = f"Flow ({unit_2})"
-
-            dfd1 = dfd1.rename(columns={'Flow': column_name_1})
-
-            # del selected_options_dist[0]
             # Scatter and histogram
             colL, colM, colR = st.columns([1, 1, 1])
 
             with colL:
-                selected_assets = ["0", "0", "0","0","0","0", "0", "0", "0","0","0","0","0","0","0","0","0"]
-                selected_assets_temp = st.multiselect('Select assets:', ['Bald Hill Tank', 'PRV-1','PRV-2', 'PRV-3', 'PRV-4', 'PRV-5','PRV-6', 'PRV-7', 'Well PMP-1','Well PMP-2', 'Well PMP-3', 'Well Station','WTP PMP-1', 'WTP PMP-2', 'WTP PMP-3','WTP Station', 'School'],
-                                                      default='Bald Hill Tank')
-                j = 0
-                for i in selected_assets_temp:
-                    selected_assets[j] = i
-                    j = j + 1
-
+                selected_assets = st.multiselect('Select assets :', ['Bald Hill Tank', 'PRV-1','PRV-2', 'PRV-3',
+                                                                    'PRV-4', 'PRV-5','PRV-6', 'PRV-7', 'Well PMP-1',
+                                                                    'Well PMP-2', 'Well PMP-3', 'Well Station',
+                                                                    'WTP PMP-1', 'WTP PMP-2', 'WTP PMP-3',
+                                                                    'WTP Station', 'School'], default='Bald Hill Tank')
             with colM:
-                selected_years = ["0", "0", "0"]
-                selected_years_temp = st.multiselect('Select years :', ['2019', '2020', '2021'], default="2019")
-                j = 0
-                for i in selected_years_temp:
-                    selected_years[j] = i
-                    j = j + 1
-                dfd1['year'] = dfd1['Time'].dt.year
-                mask_d1 = ((dfd1['year'].astype(int) == int(selected_years[0])) | (
-                            dfd1['year'] == int(selected_years[1])) | (dfd1['year'] == int(selected_years[2])))
-                dfd1 = dfd1.loc[mask_d1]
+                selected_years = st.multiselect('Select years :', ['2019', '2020', '2021'], default="2019")
+                df_temp = mask_year(df_temp, selected_years)
 
             with colR:
-                selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-                selected_months_temp = st.multiselect('Select months :',
-                                                      ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-                                                       'August', 'September', 'October', 'November', 'December'],default = ['January', 'February'])
-                dfd1['month'] = dfd1['Time'].dt.month
-                if len(selected_months_temp) != 0:
-                    j = 0
-                    for i in selected_months_temp:
-                        selected_months[j] = numeric_month[i]
-                        j = j + 1
-                    mask_h = ((dfd1['month'].astype(int) == int(selected_months[0])) | (
-                            dfd1['month'].astype(int) == int(selected_months[1])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[2])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[3])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[4])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[5])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[6])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[7])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[8])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[9])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[10])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[11]))
-                              )
-                    dfd1 = dfd1.loc[mask_h]
+                selected_months = st.multiselect('Select months :', ['January', 'February', 'March', 'April', 'May',
+                                                                    'June', 'July', 'August', 'September', 'October',
+                                                                    'November', 'December'],
+                                                 default=['January', 'February'])
+                df_temp = mask_month(df_temp, selected_months)
 
-            selection_x = st.radio("Breakdown based on :", ["year", "month", "none"])
-            if selection_x == "none":
-                dfd1['none'] = 1
+            breakdown_selection = st.radio("Breakdown based on :", ["year", "month", "none"])
+            if breakdown_selection == "none":
+                df_temp['none'] = True
+            df_temp_copy = df_temp
+            selection = alt.selection(type="interval", encodings=["x"])
+            for i in selected_assets:
+                df_temp = df_temp_copy
+                mask = df_temp['Asset'] == i
+                df_temp = df_temp.loc[mask]
+                chart = def_distribution_chart(df_temp, i, 'dayhoursminutes(Time):O', column_name_new,
+                                               f"{breakdown_selection}:N", breakdown_selection, alt.value(1),
+                                               alt.value(0.1), selection, 650, 350, 'count()', 300, 300, True, True, 20)
+                st.write(chart)
 
-            # interval selection in the scatter plot
-            dfd1_copy = dfd1
-            for i in range(len(selected_assets_temp)):
-                pts = alt.selection(type="interval", encodings=["x"])
-                dfd1 = dfd1_copy
-                mask_d1 = (dfd1['Asset'] == selected_assets[i])
-                dfd1 = dfd1.loc[mask_d1]
-                # left panel: scatter plot
-                points = alt.Chart(dfd1).mark_point(filled=False).encode(
-                    x=alt.X('dayhoursminutes(Time):O', scale=alt.Scale(zero=False)),
-                    y=alt.Y(column_name_1, scale=alt.Scale(zero=False)),
-                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-                    opacity=alt.condition(pts, alt.value(1), alt.value(0.1))
-                ).add_selection(pts).properties(
-                    width=650,
-                    height=350
-                )
-                st.subheader(f"{selected_assets[i]}")
-                # st.write(points)
-                # right panel: histogram
-                mag = (alt.Chart(dfd1).mark_bar().encode(
-                    x=alt.X(column_name_1, bin=True),
-                    y=alt.Y('count()', stack=True),
-                    # opacity=alt.condition(pts, alt.value(1), alt.value(0)),
-                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-
-                ).properties(
-                    width=300,
-                    height=300
-                ).transform_filter(
-                    pts
-                ))
-
-                # st.write(mag)
-                # build the chart:
-                scatter = alt.hconcat(points, mag).transform_bin(f"{column_name_1} binned", field=column_name_1,
-                                                                 bin=alt.Bin(maxbins=20))
-                st.write(scatter)
-
-        if ((selected_options_dist[0] == "Pressure") | (selected_options_dist[1] == "Pressure") | (
-                selected_options_dist[2] == "Pressure")):
+        if "Pressure" in selected_options_dist:
             st.subheader("Pressure")
-            dfd1 = dfd.rename(columns={'PRV-1_FromPressure_psi': 'PRV-1 (from)',
+            df_temp = df_org
+            # must be used to avoid time shifting is charts
+            df_temp = df_temp.rename(columns={'PRV-1_FromPressure_psi': 'PRV-1 (from)',
                                      'PRV-2_FromPressure_psi': 'PRV-2 (from)',
                                      'PRV-3_FromPressure_psi': 'PRV-3 (from)',
                                      'PRV-4_FromPressure_psi': 'PRV-4 (from)',
@@ -749,7 +631,7 @@ if selected == "Water Network Exploration":
                                      'WTP PMP-3_SuctionPressure_psi': 'WTP PMP-3 (suction)'
                                      })
 
-            dfd1 = dfd1[['Time', 'PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
+            df_temp = df_temp[['Time', 'PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
                        'PRV-4 (from)', 'PRV-5 (from)', 'PRV-6 (from)', 'PRV-7 (from)',
                        'PRV-1 (to)', 'PRV-2 (to)', 'PRV-3 (to)', 'PRV-4 (to)',
                        'PRV-5 (to)', 'PRV-6 (to)', 'PRV-7 (to)', 'Well (discharge)', 'Well (suction)',
@@ -758,28 +640,18 @@ if selected == "Water Network Exploration":
                        'Well PMP-3 (discharge)', 'Well PMP-3 (suction)',
                        'WTP (discharge)', 'WTP (suction)', 'WTP PMP-1 (suction)', 'WTP PMP-2 (suction)',
                        'WTP PMP-3 (suction)']].melt('Time', var_name='Asset', value_name='Pressure')
+            # change values based on selected unit.
+            df_temp, unit_symbol = change_unit(df_temp, 'Pressure', 'pressure', pressure_unit)
 
-            if pressure_unit == 'pressure per square inch':
-                unit_3 = 'psi'
-            elif pressure_unit == 'meter of head':
-                unit_3 = 'm'
-                df3[['Pressure']] = dfd1[['Pressure']] * 0.70324961490205
+            # rename the column so that it contains the selected unit. This name is shown on the y axis
+            column_name_new = f"Pressure ({unit_symbol})"
+            df_temp = df_temp.rename(columns={'Pressure': column_name_new})
 
-            dfd1 = dfd1.rename(columns={'Pressure': f'Pressure ({unit_3})'})
-
-            column_name_1 = f"Pressure ({unit_3})"
-
-
-            dfd1 = dfd1.rename(columns={'Flow': column_name_1})
-
-            # del selected_options_dist[0]
             # Scatter and histogram
             colL, colM, colR = st.columns([1, 1, 1])
 
             with colL:
-                selected_assets = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0","0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-                selected_assets_temp = st.multiselect('Select assets',
-                                                      ['PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
+                selected_assets = st.multiselect('Select assets', ['PRV-1 (from)', 'PRV-2 (from)', 'PRV-3 (from)',
                                                        'PRV-4 (from)', 'PRV-5 (from)', 'PRV-6 (from)', 'PRV-7 (from)',
                                                        'PRV-1 (to)', 'PRV-2 (to)', 'PRV-3 (to)', 'PRV-4 (to)',
                                                        'PRV-5 (to)', 'PRV-6 (to)', 'PRV-7 (to)', 'Well (discharge)',
@@ -790,275 +662,174 @@ if selected == "Water Network Exploration":
                                                        'WTP (discharge)', 'WTP (suction)', 'WTP PMP-1 (suction)',
                                                        'WTP PMP-2 (suction)',
                                                        'WTP PMP-3 (suction)'],
-                                                      default='PRV-1 (from)')
-
-                j = 0
-                for i in selected_assets_temp:
-                    selected_assets[j] = i
-                    j = j + 1
-
+                                                       default='PRV-1 (from)')
             with colM:
-                selected_years = ["0", "0", "0"]
-                selected_years_temp = st.multiselect('Select years', ['2019', '2020', '2021'], default="2019")
-                j = 0
-                for i in selected_years_temp:
-                    selected_years[j] = i
-                    j = j + 1
-                dfd1['year'] = dfd1['Time'].dt.year
-                mask_d1 = ((dfd1['year'].astype(int) == int(selected_years[0])) | (
-                        dfd1['year'] == int(selected_years[1])) | (dfd1['year'] == int(selected_years[2])))
-                dfd1 = dfd1.loc[mask_d1]
+                selected_years = st.multiselect('Select years', ['2019', '2020', '2021'], default="2019")
+                df_temp = mask_year(df_temp, selected_years)
 
             with colR:
-                selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-                selected_months_temp = st.multiselect('Select months',
-                                                      ['January', 'February', 'March', 'April', 'May', 'June', 'July',
-                                                       'August', 'September', 'October', 'November', 'December'], default = ['January', 'February'])
-                dfd1['month'] = dfd1['Time'].dt.month
-                if len(selected_months_temp) != 0:
-                    j = 0
-                    for i in selected_months_temp:
-                        selected_months[j] = numeric_month[i]
-                        j = j + 1
-                    mask_h = ((dfd1['month'].astype(int) == int(selected_months[0])) | (
-                            dfd1['month'].astype(int) == int(selected_months[1])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[2])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[3])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[4])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[5])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[6])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[7])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[8])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[9])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[10])) | (
-                                      dfd1['month'].astype(int) == int(selected_months[11]))
-                              )
-                    dfd1 = dfd1.loc[mask_h]
+                selected_months = st.multiselect('Select months', ['January', 'February', 'March', 'April', 'May',
+                                                                    'June', 'July', 'August', 'September', 'October',
+                                                                    'November', 'December'],
+                                                 default=['January', 'February'])
+                df_temp = mask_month(df_temp, selected_months)
 
-            selection_x = st.radio("Breakdown based on", ["year", "month", "none"])
-            if selection_x == "none":
-                dfd1['none'] = 1
+            breakdown_selection = st.radio("Breakdown based on", ["year", "month", "none"])
+            if breakdown_selection == "none":
+                df_temp['none'] = True
+            df_temp_copy = df_temp
+            selection = alt.selection(type="interval", encodings=["x"])
+            for i in selected_assets:
+                df_temp = df_temp_copy
+                mask = df_temp['Asset'] == i
+                df_temp = df_temp.loc[mask]
+                chart = def_distribution_chart(df_temp, i, 'dayhoursminutes(Time):O', column_name_new,
+                                               f"{breakdown_selection}:N", breakdown_selection, alt.value(1),
+                                               alt.value(0.1), selection, 650, 350, 'count()', 300, 300, True, True, 20)
+                st.write(chart)
 
-            # interval selection in the scatter plot
-            dfd1_copy = dfd1
-            for i in range(len(selected_assets_temp)):
-                pts = alt.selection(type="interval", encodings=["x"])
-                dfd1 = dfd1_copy
-                mask_d1 = (dfd1['Asset'] == selected_assets[i])
-                dfd1 = dfd1.loc[mask_d1]
-                # left panel: scatter plot
-                points = alt.Chart(dfd1).mark_point(filled=False).encode(
-                    x=alt.X('dayhoursminutes(Time):O', scale=alt.Scale(zero=False)),
-                    y=alt.Y(column_name_1, scale=alt.Scale(zero=False)),
-                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-                    opacity=alt.condition(pts, alt.value(1), alt.value(0.1))
-                ).add_selection(pts).properties(
-                    width=650,
-                    height=350
-                )
-                st.subheader(f"{selected_assets[i]}")
-                # st.write(points)
-                # right panel: histogram
-                mag = (alt.Chart(dfd1).mark_bar().encode(
-                    x=alt.X(column_name_1, bin=True),
-                    y=alt.Y('count()', stack=True),
-                    # opacity=alt.condition(pts, alt.value(1), alt.value(0)),
-                    color=alt.Color(f"{selection_x}:N", legend=alt.Legend(title=f"{selection_x}")),
-
-                ).properties(
-                    width=300,
-                    height=300
-                ).transform_filter(
-                    pts
-                ))
-
-                # st.write(mag)
-                # build the chart:
-                scatter = alt.hconcat(points, mag).transform_bin(f"{column_name_1} binned", field=column_name_1,
-                                                                 bin=alt.Bin(maxbins=20))
-                st.write(scatter)
-
-
-
-#########PIPE DATA EXPLORATION#################################################
 if selected == "Pipe Data Exploration":
     st.title(selected)
-    df_pipe = load_pipe("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
-    df_pipe_orig = df_pipe.drop("FID", axis=1)
+    df_pipe_orig = df_pipe
 
     with st.sidebar:
         st.header(':gear: Settings')
         st.subheader('Choose the units')
         # SET UNITS
-        diameter_unit = st.selectbox("Diameter:", ["in", "mm"])
-        length_unit = st.selectbox("Length:", ["ft", "m"])
-        discharge_unit = st.selectbox("Discharge:", ["gpm", "lps"])
-        pressure_unit = st.selectbox("Pressure:", ["psi", "kg/cm^2"])
-        groundwater_unit = st.selectbox("Groundwater Depth:", ["ft", "m"])
+        diameter_unit = st.selectbox("Diameter:", ["inch", "millimeter"])
+        length_unit = st.selectbox("Length:", ["foot", "meter"])
+        discharge_unit = st.selectbox("Discharge:", ["gallon per minute", "liter per second"])
+        pressure_unit = st.selectbox("Pressure:", ["pressure per square inch", "kilogram per square centimeter"])
+        groundwater_unit = st.selectbox("Groundwater Depth:", ["foot", "meter"])
     st.header("Data Tables")
     if st.checkbox("Show Raw Data"):
         with st.spinner('Writing in progress...'):
             st.write(df_pipe)
-        st.success('Done!')
 
     st.header("Charts")
-    selected_options = st.multiselect('Select attributes ', ['Diameter', 'Length', 'Material', 'Installation Year', 'Discharge', 'Pressure', 'Pipe Bed-Soil Type', 'Groundwater Depth'], default = ['Diameter', 'Installation Year', 'Discharge',  'Pipe Bed-Soil Type'])
-    selected_options.append("None")
+    selected_options = st.multiselect('Select attributes ', ['Diameter', 'Length', 'Material', 'Installation Year',
+                                                             'Discharge', 'Pressure', 'Pipe Bed-Soil Type',
+                                                             'Groundwater Depth'], default = ['Diameter',
+                                                             'Installation Year', 'Discharge',  'Pipe Bed-Soil Type'])
 
     # if "Data Exploration" is selected in the main menu do the following
-
     ### READING AND SETTING THE UNITS AND RENAMING DATAFRAME
-    # 1 Diameter
-    if diameter_unit == 'mm':
-        unit_a = 'mm'
-        df_pipe[['Diameter']] = (df_pipe[['Diameter']].astype(float) * 25.4).round(1)
-    else:
-        unit_a = 'in'
+
+    df_pipe, unit_symbol = change_unit(df_pipe, 'Diameter', 'diameter', diameter_unit)
+    df_pipe[['Diameter']] = df_pipe[['Diameter']].round(1)
     # rename the column so that it contains the selected unit. This name is shown on the y axis
-    dia_unit = f"Diameter ({unit_a})"
-    df_pipe = df_pipe.rename(columns={'Diameter': dia_unit}).astype('category')
+    dia_col_name = f"Diameter ({unit_symbol})"
+    df_pipe = df_pipe.rename(columns={'Diameter': dia_col_name}).astype('category')
 
-    # 2 Length
-    df_pipe[['LENGTH_FT']].astype(str).astype(float)
-    if length_unit == 'm':
-        unit_b = 'm'
-        df_pipe[['LENGTH_FT']] = (df_pipe[['LENGTH_FT']].astype(float) * 0.3048).round(1)
-    else:
-        unit_b = 'ft'
+    df_pipe, unit_symbol = change_unit(df_pipe, 'LENGTH_FT', 'length', length_unit)
+    df_pipe[['LENGTH_FT']] = df_pipe[['LENGTH_FT']].round(1)
     # rename the column so that it contains the selected unit. This name is shown on the y axis
-    len_unit = f"Length ({unit_b})"
-    df_pipe = df_pipe.rename(columns={'LENGTH_FT': len_unit})
+    len_col_name = f"Length ({unit_symbol})"
+    df_pipe = df_pipe.rename(columns={'LENGTH_FT': len_col_name})
 
-    # 3 Material
-    mat_unit = "Material"
-    df_pipe = df_pipe.rename(columns={'MATERIAL': mat_unit}).astype('category')
+    mat_col_name = "Material"
+    df_pipe = df_pipe.rename(columns={'MATERIAL': mat_col_name}).astype('category')
 
-    # 4 Year of Installation
-    YOI_unit = "Installation Year"
-    df_pipe = df_pipe.rename(columns={'Install_ye': YOI_unit}).astype('category')
+    year_col_name = "Installation Year"
+    df_pipe = df_pipe.rename(columns={'Install_ye': year_col_name}).astype('category')
 
-    # 5 Discharge
-    df_pipe[['Qmax_gpm']].astype(str).astype(float)
-    if discharge_unit == 'lps':
-        unit_c = 'lps'
-        df_pipe[['Qmax_gpm']] = (df_pipe[['Qmax_gpm']].astype(float) * 0.0631).round(1)
-    else:
-        unit_c = 'gpm'
+    df_pipe, unit_symbol = change_unit(df_pipe, 'Qmax_gpm', 'discharge', discharge_unit)
+    df_pipe[['Qmax_gpm']] = df_pipe[['Qmax_gpm']].round(1)
     # rename the column so that it contains the selected unit. This name is shown on the y axis
-    q_unit = f"Discharge ({unit_c})"
-    df_pipe = df_pipe.rename(columns={'Qmax_gpm': q_unit})
+    discharge_col_name = f"Discharge ({unit_symbol})"
+    df_pipe = df_pipe.rename(columns={'Qmax_gpm': discharge_col_name})
 
-    # 6 Pressure
-    df_pipe[['Pmax_Psi']].astype(str).astype(float)
-    if pressure_unit == 'kg/cm^2':
-        unit_d = 'kg/cm^2'
-        df_pipe[['Pmax_Psi']] = (df_pipe[['Pmax_Psi']].astype(float) * 0.070307).round(1)
-    else:
-        unit_d = 'psi'
+    df_pipe, unit_symbol = change_unit(df_pipe, 'Pmax_Psi', 'pressure', pressure_unit)
+    df_pipe[['Pmax_Psi']] = df_pipe[['Pmax_Psi']].round(1)
     # rename the column so that it contains the selected unit. This name is shown on the y axis
-    p_unit = f"Pressure ({unit_d})"
-    df_pipe = df_pipe.rename(columns={'Pmax_Psi': p_unit})
+    press_col_name = f"Pressure ({unit_symbol})"
+    df_pipe = df_pipe.rename(columns={'Pmax_Psi': press_col_name})
 
-    # 7 Pipe bed-soil type
-    bedsoil_unit = "Bed-Soil"
-    df_pipe = df_pipe.rename(columns={'PAR_MAT': bedsoil_unit}).astype('category')
+    soil_col_name = "Bed-Soil"
+    df_pipe = df_pipe.rename(columns={'PAR_MAT': soil_col_name}).astype('category')
 
-    # 8 Bed-Soil PH
-    df_pipe[['PH']].astype(str).astype(float)
+    ph_col_name = "Bed-Soil pH"
+    df_pipe = df_pipe.rename(columns={'PH': ph_col_name})
 
-    ph_unit = "Bed-Soil pH"
-    df_pipe = df_pipe.rename(columns={'PH': ph_unit})
-
-    # GW Depth
-    df_pipe[['Dist_GWT']].astype(str).astype(float)
-    if groundwater_unit == 'm':
-        unit_e = 'm'
-        df_pipe[['Dist_GWT']] = (df_pipe[['Dist_GWT']].astype(float) * 0.3048).round(1)
-    else:
-        unit_e = 'ft'
+    df_pipe, unit_symbol = change_unit(df_pipe, 'Dist_GWT', 'ground water depth', groundwater_unit)
+    df_pipe[['Dist_GWT']] = df_pipe[['Dist_GWT']].round(1)
     # rename the column so that it contains the selected unit. This name is shown on the y axis
-    gwd_unit = f"Groundwater Depth ({unit_e})"
-    df_pipe = df_pipe.rename(columns={'Dist_GWT': gwd_unit})
+    gwd_col_name = f"Groundwater Depth ({unit_symbol})"
+    df_pipe = df_pipe.rename(columns={'Dist_GWT': gwd_col_name})
 
     # FOR DIAMETER
-    if ((selected_options[0]) == "Diameter"):  # option_1: #diameter
-        del selected_options[0]
-
+    if "Diameter" in selected_options:
         # plot the chart
         Pipe_DiaMaterial_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(dia_unit, scale=alt.Scale(zero=False)),
-            alt.Y(YOI_unit, scale=alt.Scale(zero=False, type='sqrt')),
-            alt.Color(mat_unit, legend=alt.Legend(title="Material")),
-            tooltip=[dia_unit, mat_unit, YOI_unit, 'count()']
+            alt.X(dia_col_name, scale=alt.Scale(zero=False)),
+            alt.Y(year_col_name, scale=alt.Scale(zero=False, type='sqrt')),
+            alt.Color(mat_col_name, legend=alt.Legend(title="Material")),
+            tooltip=[dia_col_name, mat_col_name, year_col_name, 'count()']
         ).properties(
-            title=f"Diameter ({unit_a}) vs. Year of Installation",
+            title=f"{dia_col_name} vs. Year of Installation",
             width=450, height=250
         ).interactive()
 
         text_DiaMaterial = alt.Chart(df_pipe).mark_text(dx=-15, dy=3, color='white').encode(
-            x=alt.X(dia_unit, stack='zero'),
-            y=alt.Y(YOI_unit),
+            x=alt.X(dia_col_name, stack='zero'),
+            y=alt.Y(year_col_name),
             text=alt.Text('count():Q')
         )
 
         Pipe_DiaLength_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(dia_unit, scale=alt.Scale(zero=True)),
-            alt.Y(f"sum(Length ({unit_b})):Q", scale=alt.Scale(zero=True)),
-            alt.Color(mat_unit, legend=alt.Legend(title="Material")),
-            tooltip=[dia_unit, mat_unit, f"sum(Length ({unit_b})):Q", 'count()']
+            alt.X(dia_col_name, scale=alt.Scale(zero=True)),
+            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=True)),
+            alt.Color(mat_col_name, legend=alt.Legend(title="Material")),
+            tooltip=[dia_col_name, mat_col_name, f"sum({len_col_name}):Q", 'count()']
         ).properties(
-            title=f"Diameter ({unit_a}) vs. Length ({unit_b})",
+            title=f"{dia_col_name} vs. {len_col_name}",
             width=450, height=250
         ).interactive().resolve_scale(y='independent')
         st.write(Pipe_DiaMaterial_Histogram_Chart + text_DiaMaterial | Pipe_DiaLength_Histogram_Chart)
 
     # FOR LENGTH
-    if ((selected_options[0]) == "Length"):  # option_2: #length
-        del selected_options[0]
-
+    if "Length" in selected_options:
         # plot the chart
         Pipe_Len_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(len_unit, type='quantitative', scale=alt.Scale(zero=False, type='log', base=2)),
+            alt.X(len_col_name, type='quantitative', scale=alt.Scale(zero=False, type='log', base=2)),
             alt.Y('count()', scale=alt.Scale(zero=False, type='sqrt')),
-            alt.Color(len_unit, type='quantitative', sort="descending", legend=alt.Legend(title=f"Length ({unit_b})")),
-            tooltip=[len_unit, 'count()']
+            alt.Color(len_col_name, type='quantitative', sort="descending", legend=alt.Legend(title=f"{len_col_name}")),
+            tooltip=[len_col_name, 'count()']
         ).properties(
-            title=f"Length ({unit_b}) Histogram",
+            title=f"{len_col_name} Histogram",
             width=450, height=250
         ).interactive()
 
         Pipe_ZoneLength_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X('ZONE', scale=alt.Scale(zero=True), sort='-y'),
-            alt.Y(f"sum(Length ({unit_b})):Q", scale=alt.Scale(zero=True)),
+            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=True)),
             alt.Color('Material', legend=alt.Legend(title="Material")),
-            tooltip=['ZONE', f"sum(Length ({unit_b})):Q", 'Material', 'count()']
+            tooltip=['ZONE', f"sum({len_col_name}):Q", 'Material', 'count()']
         ).properties(
-            title=f"Zone vs. Length ({unit_b})",
+            title=f"Zone vs. {len_col_name}",
             width=450, height=250
         ).interactive().resolve_scale(y='independent')
 
         st.write(Pipe_Len_Histogram_Chart | Pipe_ZoneLength_Histogram_Chart)
 
     # FOR MATERIAL
-    if ((selected_options[0]) == "Material"):  # option_3: #material
-        del selected_options[0]
-
+    if "Material" in selected_options:
         # plot the chart
         Pipe_Mat_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(mat_unit, type='nominal', scale=alt.Scale(zero=True), sort='-y'),
-            alt.Y(f"sum(Length ({unit_b})):Q", scale=alt.Scale(zero=True)),
-            alt.Color(mat_unit, legend=alt.Legend(title="Material")),
-            tooltip=[mat_unit, f"sum(Length ({unit_b})):Q", 'count()']
+            alt.X(mat_col_name, type='nominal', scale=alt.Scale(zero=True), sort='-y'),
+            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=True)),
+            alt.Color(mat_col_name, legend=alt.Legend(title="Material")),
+            tooltip=[mat_col_name, f"sum({len_col_name}):Q", 'count()']
         ).properties(
-            title=f"Material vs. Length ({unit_b})",
+            title=f"Material vs. {len_col_name}",
             width=450, height=250
         ).interactive()
 
         Pipe_MatBreak_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(mat_unit, type='nominal', scale=alt.Scale(zero=True), sort='-y'),
+            alt.X(mat_col_name, type='nominal', scale=alt.Scale(zero=True), sort='-y'),
             alt.Y('sum(Breaks_No)', type='quantitative', scale=alt.Scale(zero=True), title="Sum of No. of Pipe Breaks"),
-            alt.Color(mat_unit, legend=alt.Legend(title="Material")),
-            tooltip=[mat_unit, 'sum(Breaks_No):Q', 'count()']
+            alt.Color(mat_col_name, legend=alt.Legend(title="Material")),
+            tooltip=[mat_col_name, 'sum(Breaks_No):Q', 'count()']
         ).properties(
             title="Material vs. Pipe Breaks reported between (2015-2020)",
             width=450, height=250
@@ -1066,116 +837,91 @@ if selected == "Pipe Data Exploration":
 
         st.write(Pipe_Mat_Histogram_Chart | Pipe_MatBreak_Histogram_Chart)
 
-    # FOR INSTALLATION YEAR
-    if ((selected_options[0]) == "Installation Year"):  # option_1: #install year
-        del selected_options[0]
-        len_unit = f"Length ({unit_b})"
-        df_pipe = df_pipe.rename(columns={'LENGTH_FT': len_unit})
+    if "Installation Year" in selected_options:
+        len_unit = f"{len_col_name}"
+        df_pipe = df_pipe.rename(columns={'LENGTH_FT': len_col_name})
         # plot the chart
         Pipe_YOIMaterial_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(YOI_unit, type='nominal', scale=alt.Scale(zero=False), sort='-y'),
-            alt.Y(f"sum(Length ({unit_b})):Q", scale=alt.Scale(zero=False)),
+            alt.X(year_col_name, type='nominal', scale=alt.Scale(zero=False), sort='-y'),
+            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=False)),
             # alt.Column(YOI_unit, type='ordinal'),
             alt.Color('Material', legend=alt.Legend(title="Material")),
-            tooltip=[YOI_unit, f"sum(Length ({unit_b}))", 'Material', 'count()']
+            tooltip=[year_col_name, f"sum({len_col_name})", 'Material', 'count()']
         ).properties(
-            title=f"Length ({unit_b}) wise Installation Year (High to Low)",
+            title=f"{len_col_name} wise Installation Year (High to Low)",
             width=450, height=250
-        ).interactive()  # .resolve_scale(y = 'independent')
+        ).interactive()
 
         # plot the chart
         Pipe_YOIDiameter_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(YOI_unit, type='nominal', scale=alt.Scale(zero=False), sort='x'),
+            alt.X(year_col_name, type='nominal', scale=alt.Scale(zero=False), sort='x'),
             alt.Y('sum(Breaks_No):Q', scale=alt.Scale(zero=True), title="Sum of No. of Pipe Breaks"),
-            # alt.Column(YOI_unit, type='ordinal'),
             alt.Color('Material', legend=alt.Legend(title="Material")),
-            tooltip=[YOI_unit, 'count()']
+            tooltip=[year_col_name, 'count()']
         ).properties(
             title="Year of Installation of Pipes vs. Pipe Breaks reported between (2015-2020)",
             width=450, height=250
-        ).interactive()  # .resolve_scale(y = 'independent')
-
-        # text_YOIDiameter = alt.Chart(df_pipe).mark_text(dx=-15, dy=3, color='white').encode(
-        # x=alt.X(YOI_unit, stack='zero'),
-        # y=alt.Y(dia_unit),
-        # text=alt.Text('count():Q')
-        # )
+        ).interactive()
 
         st.write(Pipe_YOIMaterial_Histogram_Chart | Pipe_YOIDiameter_Histogram_Chart)
 
     # FOR DISCHARGE
-    if ((selected_options[0]) == "Discharge"):  # option_2: #discharge
-        del selected_options[0]
-
+    if "Discharge" in selected_options:
         # plot the chart
         Pipe_Dis_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=10).encode(
-            alt.X(q_unit, type='quantitative', scale=alt.Scale(zero=True, type='quantile')),
+            alt.X(discharge_col_name, type='quantitative', scale=alt.Scale(zero=True, type='quantile')),
             alt.Y('count()', scale=alt.Scale(zero=False, type='sqrt')),
-            alt.Color(q_unit, type='quantitative', sort="descending", legend=alt.Legend(title=f"Discharge ({unit_c})")),
-            tooltip=[q_unit, 'count()']
+            alt.Color(discharge_col_name, type='quantitative', sort="descending", legend=alt.Legend(title=f"{discharge_col_name}")),
+            tooltip=[discharge_col_name, 'count()']
         ).properties(
-            title=f"Discharge ({unit_c}) Histogram",
+            title=f"{discharge_col_name} Histogram",
             width=450, height=250
         ).interactive()
 
         Pipe_DisBreak_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=10).encode(
-            alt.X(q_unit, type='quantitative', scale=alt.Scale(zero=True, type='quantile')),
+            alt.X(discharge_col_name, type='quantitative', scale=alt.Scale(zero=True, type='quantile')),
             alt.Y('sum(Breaks_No):Q', scale=alt.Scale(zero=False, type='sqrt'), title="Sum of No. of Pipe Breaks"),
-            alt.Color(q_unit, type='quantitative', sort="descending", legend=alt.Legend(title=f"Discharge ({unit_c})")),
-            tooltip=[q_unit, 'count()']
+            alt.Color(discharge_col_name, type='quantitative', sort="descending", legend=alt.Legend(title=f"{discharge_col_name}")),
+            tooltip=[discharge_col_name, 'count()']
         ).properties(
-            title=f"Discharge ({unit_c}) vs. Pipe Breaks reported between (2015-2020)",
+            title=f"{discharge_col_name} vs. Pipe Breaks reported between (2015-2020)",
             width=450, height=250
         ).interactive()
 
         Pipe_DisYOI_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(f"sum(Discharge ({unit_c})):Q", scale=alt.Scale(zero=True)),
-            alt.Y(YOI_unit, scale=alt.Scale(zero=True), sort='y'),
+            alt.X(f"sum({discharge_col_name}):Q", scale=alt.Scale(zero=True)),
+            alt.Y(year_col_name, scale=alt.Scale(zero=True), sort='y'),
             alt.Color('Material', legend=alt.Legend(title="Material")),
-            tooltip=[f"sum(Discharge ({unit_c})):Q", 'Material', 'count()']
+            tooltip=[f"sum({discharge_col_name}):Q", 'Material', 'count()']
         ).properties(
-            title=f"Discharge ({unit_c}) wise Installation Year (High to Low)",
+            title=f"{discharge_col_name} wise Installation Year (High to Low)",
             width=450, height=250
         ).interactive().resolve_scale(y='independent')
 
         st.write((Pipe_Dis_Histogram_Chart & Pipe_DisBreak_Histogram_Chart) | Pipe_DisYOI_Histogram_Chart)
 
     # FOR PRESSURE
-    if ((selected_options[0]) == "Pressure"):  # option_2: #discharge
-        del selected_options[0]
-
+    if "Pressure" in selected_options:
         # plot the chart
         Pipe_Pre_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=10).encode(
-            alt.X(p_unit, type='quantitative', scale=alt.Scale(zero=False)),
+            alt.X(press_col_name, type='quantitative', scale=alt.Scale(zero=False)),
             alt.Y('count()', scale=alt.Scale(zero=False, type='linear', base=2)),
-            alt.Color(p_unit, type='quantitative', sort="descending", legend=alt.Legend(title=f"Pressure ({unit_d})")),
-            tooltip=[p_unit, 'count()']
+            alt.Color(press_col_name, type='quantitative', sort="descending", legend=alt.Legend(title=f"{press_col_name}")),
+            tooltip=[press_col_name, 'count()']
         ).properties(
-            title=f"Pressure ({unit_d}) Histogram",
+            title=f"{press_col_name} Histogram",
             width=650, height=450
         ).interactive().resolve_scale(x='independent', y='independent')
 
-        # Pipe_PreBreak_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=10).encode(
-        # alt.X(p_unit, type='quantitative', scale=alt.Scale(zero=True), sort='-y'),
-        # alt.Y('sum(Breaks_No):Q', scale=alt.Scale(zero=True), title="Sum of No. of Pipe Breaks"),
-        # alt.Color(mat_unit, type='nominal', legend=alt.Legend(title="Material")),
-        # tooltip=[p_unit, 'count()']
-        # ).properties(
-        #     title=f"Pressure ({unit_d}) vs. Pipe Breaks reported between (2015-2020)",
-        #     width=450, height=250
-        # ).interactive().resolve_scale(x='independent', y='independent')
-
         st.write(Pipe_Pre_Histogram_Chart)  # | Pipe_PreBreak_Histogram_Chart)
     # FOR BED SOILPH
-    if ((selected_options[0]) == "Pipe Bed-Soil Type"):  # option_3: #material
-        del selected_options[0]
-
+    if "Pipe Bed-Soil Type" in selected_options:
         # plot the chart
         Pipe_BS_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
-            alt.X(ph_unit, scale=alt.Scale(zero=False)),
+            alt.X(ph_col_name, scale=alt.Scale(zero=False)),
             alt.Y('sum(Breaks_No):Q', scale=alt.Scale(zero=False), title="Sum of No. of Pipe Breaks"),
             alt.Color('Material', legend=alt.Legend(title="Bed-Soil pH")),
-            tooltip=[ph_unit, 'sum(Breaks_No):Q', mat_unit, 'count()']
+            tooltip=[ph_col_name, 'sum(Breaks_No):Q', mat_col_name, 'count()']
         ).properties(
             title="Soil pH vs. Pipe Breaks reported between (2015-2020)",
             width=650, height=450
@@ -1183,129 +929,59 @@ if selected == "Pipe Data Exploration":
         st.write(Pipe_BS_Histogram_Chart)
 
     # FOR GROUNDWATER
-    if ((selected_options[0]) == "Groundwater Depth"):  # option_3: #material
-        del selected_options[0]
-
+    if "Groundwater Depth" in selected_options:
         # plot the chart
         Pipe_GWD_Histogram_Chart = alt.Chart(df_pipe).mark_circle(size=20).encode(
-            alt.X(ph_unit, scale=alt.Scale(zero=False), sort='x'),
-            alt.Y(gwd_unit, type='quantitative', scale=alt.Scale(zero=False, type='sqrt')),
+            alt.X(ph_col_name, scale=alt.Scale(zero=False), sort='x'),
+            alt.Y(gwd_col_name, type='quantitative', scale=alt.Scale(zero=False, type='sqrt')),
             alt.Color('sum(Breaks_No):Q', legend=alt.Legend(title="Total Breaks (2015-2020)"),
                       scale=alt.Scale(scheme='reds')),
-            tooltip=[gwd_unit, 'sum(Breaks_No):Q', mat_unit, 'count()'],
+            tooltip=[gwd_col_name, 'sum(Breaks_No):Q', mat_col_name, 'count()'],
             size='sum(Breaks_No):Q',
         ).properties(
-            title=f"Groundwater Depth ({unit_e}) vs. Soil pH",
+            title=f"{gwd_col_name} vs. Soil pH",
             width=650, height=450
         ).interactive()
         st.write(Pipe_GWD_Histogram_Chart)
 
-#dfu = pd.read_csv("C:/Users/14129/Desktop/Water usage.csv")
-
 
 if selected == "Water Usage Exploration":
     st.title(selected)
-    dfu = load_usage("https://1drv.ms/u/s!AnhaxtVMqKpxgok8LpetXE7Hfb1www?e=JQu4W0")
-
-    ymd_range = [datetime.date(2019, 1, 1), datetime.date(2019, 1, 2)]
     with st.sidebar:
         st.header(':gear: Settings')
-
         st.subheader('Choose unit:') # could be flow, pressure and water level
-
         water_usage_unit = st.selectbox("Water usage:", ["kilogallon", "gallon", "cubic meter", "cubic foot", "centum cubic foot"])
 
     st.header("Data Tables")
     if st.checkbox("Show Raw Data"):
         with st.spinner('Writing in progress...'):
             st.write(dfu)
-        #st.success('Done!')
 
     st.header("Charts")
     dfu = dfu.rename(columns={'Water usage (kgal)':'Water usage'})
 
     colL, colR = st.columns([1, 1])
-
     with colL:
-        selected_years = ["0", "0", "0"]
-        selected_years_temp = st.multiselect('Select years:', ['2019', '2020', '2021'], default = "2019")
-        j = 0
-        for i in selected_years_temp:
-            selected_years[j] = i
-            j = j + 1
-        dfu['year'] = dfu['Time'].dt.year
-        mask_d1 = ((dfu['year'].astype(int) == int(selected_years[0])) | (dfu['year'] == int(selected_years[1])) | (
-                    dfu['year'] == int(selected_years[2])))
-        dfu = dfu.loc[mask_d1]
-
+        selected_years = st.multiselect('Select years:', ['2019', '2020', '2021'], default="2019")
+        dfu = mask_year(dfu, selected_years)
     with colR:
-        selected_months = ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-        selected_months_temp = st.multiselect('Select months ',
-                                              ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-                                               'September', 'October', 'November', 'December'], default = ['January', 'February'])
-        dfu['month'] = dfu['Time'].dt.month
-        if len(selected_months_temp) != 0:
-            numeric_month = {
-                "January": "1",
-                "February": "2",
-                "March": "3",
-                "April": "4",
-                "May": "5",
-                "June": "6",
-                "July": "7",
-                "August": "8",
-                "September": "9",
-                "October": "10",
-                "November": "11",
-                "December": "12"
-            }
-            j = 0
-            for i in selected_months_temp:
-                selected_months[j] = numeric_month[i]
-                j = j + 1
-            mask_h = ((dfu['month'].astype(int) == int(selected_months[0])) | (
-                    dfu['month'].astype(int) == int(selected_months[1])) | (
-                              dfu['month'].astype(int) == int(selected_months[2])) | (
-                              dfu['month'].astype(int) == int(selected_months[3])) | (
-                              dfu['month'].astype(int) == int(selected_months[4])) | (
-                              dfu['month'].astype(int) == int(selected_months[5])) | (
-                              dfu['month'].astype(int) == int(selected_months[6])) | (
-                              dfu['month'].astype(int) == int(selected_months[7])) | (
-                              dfu['month'].astype(int) == int(selected_months[8])) | (
-                              dfu['month'].astype(int) == int(selected_months[9])) | (
-                              dfu['month'].astype(int) == int(selected_months[10])) | (
-                              dfu['month'].astype(int) == int(selected_months[11]))
-                      )
-            dfu = dfu.loc[mask_h]
+        selected_months = st.multiselect('Select months:', ['January', 'February', 'March', 'April', 'May',
+                                                            'June', 'July', 'August', 'September', 'October',
+                                                            'November', 'December'], default=['January', 'February'])
+        dfu = mask_month(dfu, selected_months)
 
-    #dfu = dfu[['Time', 'Customer ID', 'Water usage', 'Water usage', 'Zone']].melt(var_name='Zone', value_name='Water Usage')
 
-    if water_usage_unit == 'kilogallon':
-        unit_u = 'kgal'
-    elif water_usage_unit == 'gallon':
-        unit_u = 'gal'
-        dfu[['Water usage']] = dfu[['Water usage']] * 1000
-    elif water_usage_unit == 'cubic meter':
-        unit_u = 'm^3'
-        dfu[['Water usage']] = dfu[['Water usage']] * 3.79
-    elif water_usage_unit == 'cubic foot':
-        unit_u = 'ft^3'
-        dfu[['Water usage']] = dfu[['Water usage']] * 133.68
-    elif water_usage_unit == 'centum cubic foot':
-        unit_u = 'ccf'
-        dfu[['Water usage']] = dfu[['Water usage']] * 1.34
+    dfu, unit_u  = change_unit(dfu, 'Water usage', 'water usage', water_usage_unit)
 
     column_name_u = f"Water usage ({unit_u})"
-
     dfu = dfu.rename(columns={'Water usage': column_name_u})
-
-    # selection to allow highlight of genre when click on legend
-    #selection = alt.selection_multi(fields=['Asset'], bind='legend')
+    dfu['month'] = dfu['Time'].dt.month
+    dfu = rename_months(dfu)
+    # selection to allow highlight when click on legend
     selection = alt.selection_interval(encodings=['x'])
 
-    # scatterplot showing the correlation between two features for all genres
     Usage_Line_Chart = alt.Chart(dfu).mark_point(filled = True).encode(
-        x=alt.X('Time:T', scale=alt.Scale(zero=False)),
+        x=alt.X('month:N', scale=alt.Scale(zero=False)),
         y=alt.Y(f'{column_name_u}:Q', scale=alt.Scale(zero=False)),
         color=alt.Color('Zone:N', legend=alt.Legend(title="Zone")),
         opacity=alt.condition(selection, alt.value(1), alt.value(0.1)),
@@ -1330,11 +1006,7 @@ if selected == "Water Usage Exploration":
     st.subheader("Water usage in time:")
     st.write(chart)
 
-
-
-########################################################################
     colLz, colMz, colRzL, colRzR = st.columns([1, 2, 1, 0.5])
-
 
     with colLz:
         zone_name = ["All", "Fire District", "Northern", "Oakville High", "Oakville Low", "Straits",
@@ -1342,38 +1014,13 @@ if selected == "Water Usage Exploration":
         selection_zone = st.radio("Select zone:", zone_name)
 
     with colMz:
-        sum_z = [0,0,0,0,0,0,0]
-        #sum_z[0] = dfu[f"{column_name_u}"].sum()
+        sum_z = []
 
-        mask_z = ((dfu["Zone"] == "Fire District Zone" ))
-        dfuz = dfu.loc[mask_z]
-        dfuz[f"{column_name_u}"] = pd.to_numeric(dfuz[f"{column_name_u}"])
-        sum_z[1] = dfuz[f"{column_name_u}"].sum()
-
-        mask_z = ((dfu["Zone"] == "Northern Zone" ))
-        dfuz = dfu.loc[mask_z]
-        dfuz[f"{column_name_u}"] = pd.to_numeric(dfuz[f"{column_name_u}"])
-        sum_z[2]= dfuz[f"{column_name_u}"].sum()
-
-        mask_z = ((dfu["Zone"] == "Oakville High Zone" ))
-        dfuz = dfu.loc[mask_z]
-        dfuz[f"{column_name_u}"] = pd.to_numeric(dfuz[f"{column_name_u}"])
-        sum_z[3] = dfuz[f"{column_name_u}"].sum()
-
-        mask_z = ((dfu["Zone"] == "Oakville Low Zone" ))
-        dfuz = dfu.loc[mask_z]
-        dfuz[f"{column_name_u}"] = pd.to_numeric(dfuz[f"{column_name_u}"])
-        sum_z[4] = dfuz[f"{column_name_u}"].sum()
-
-        mask_z = ((dfu["Zone"] == "Straits Zone" ))
-        dfuz = dfu.loc[mask_z]
-        dfuz[f"{column_name_u}"] = pd.to_numeric(dfuz[f"{column_name_u}"])
-        sum_z[5] = dfuz[f"{column_name_u}"].sum()
-
-        mask_z = ((dfu["Zone"] == "Town Hall Zone" ))
-        dfuz = dfu.loc[mask_z]
-        dfuz[f"{column_name_u}"] = pd.to_numeric(dfuz[f"{column_name_u}"])
-        sum_z[6] = dfuz[f"{column_name_u}"].sum()
+        for i in zone_name:
+            mask_z = (dfu["Zone"].astype(str) == f"{i} Zone")
+            dfuz = dfu.loc[mask_z]
+            dfuz[f"{column_name_u}"] = pd.to_numeric(dfuz[f"{column_name_u}"])
+            sum_z.append(dfuz[f"{column_name_u}"].sum())
 
         color_names = ["black","blue","orange","red","navy","green","yellow"]
 
@@ -1399,12 +1046,9 @@ if selected == "Water Usage Exploration":
                 #color=alt.Color(field="category", type="nominal"),
                 color=alt.Color('category',
                                 scale=alt.Scale(
-                                    domain=[f"{selection_zone}", "other"],
-                                    range=[f'{color_names[j]}', 'lightgray'])
-            ))
-
-
-
+                                domain=[f"{selection_zone}", "other"],
+                                range=[f'{color_names[j]}', 'lightgray']))
+            )
         st.write(pie_chart)
 
     with colRzL:
@@ -1413,22 +1057,18 @@ if selected == "Water Usage Exploration":
         st.write("Highest monthly water usage:")
         st.write("Month of highest usage:")
     with colRzR:
-
-        mask_z = (dfu["Zone"] == f"{selection_zone} Zone")
-        dfuz = dfu.loc[mask_z]
-
-        n = [6605, 1039, 369, 1749, 1492, 527, 1438]
-
-
+        if selection_zone != "All":
+            mask_z = (dfu["Zone"] == f"{selection_zone} Zone")
+            dfuz = dfu.loc[mask_z]
+        else:
+            dfuz = dfu
+        n = len(pd.unique(dfuz['Customer ID']))
         n_index = zone_name.index(selection_zone)
 
-        #n = len(pd.unique(dfuz['Customer ID']))
-
         dfuz['month'] = dfuz['Time'].dt.month
-        zone_monthly_water_usage = [dfuz[f'{column_name_u}'].loc[dfuz["month"] == 1].sum(),dfuz[f'{column_name_u}'].loc[dfuz["month"] == 2].sum(),dfuz[f'{column_name_u}'].loc[dfuz["month"] == 3].sum(),
-                                    dfuz[f'{column_name_u}'].loc[dfuz["month"] == 4].sum(),dfuz[f'{column_name_u}'].loc[dfuz["month"] == 5].sum(),dfuz[f'{column_name_u}'].loc[dfuz["month"] == 6].sum(),
-                                    dfuz[f'{column_name_u}'].loc[dfuz["month"] == 7].sum(),dfuz[f'{column_name_u}'].loc[dfuz["month"] == 8].sum(),dfuz[f'{column_name_u}'].loc[dfuz["month"] == 9].sum(),
-                                    dfuz[f'{column_name_u}'].loc[dfuz["month"] == 10].sum(),dfuz[f'{column_name_u}'].loc[dfuz["month"] == 11].sum(),dfuz[f'{column_name_u}'].loc[dfuz["month"] == 12].sum()]
+        zone_monthly_water_usage = []
+        for i in range(12):
+            zone_monthly_water_usage.append(dfuz[f'{column_name_u}'].loc[dfuz["month"] == i].sum())
         max_water_usage = max(zone_monthly_water_usage)
         month_index = zone_monthly_water_usage.index(max_water_usage) + 1
         month_string = "_"
@@ -1436,15 +1076,12 @@ if selected == "Water Usage Exploration":
             month_string = Reverse_numeric_month[month_index]
 
         st.subheader("__________")
-        st.write(f"{n[n_index]}")
+        st.write(f"{n}")
         st.write(f"{round(max_water_usage,1)}")
         st.write(f"{month_string}")
 
-#########PREDICTING NUMBER OF BREAKS###########################################
-
 if selected == "Pipe-Break Prediction":
     st.title(selected)
-    df_pipe = load_pipe("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
     df_pipe_orig = df_pipe.drop("FID", axis=1)
 
     # define a blank data frame
@@ -1530,17 +1167,19 @@ if selected == "Pipe-Break Prediction":
         st.header("2. Machine Learning")
         st.subheader("Learn Model")
         st.write(
-            "The data model is split in 75% train and 25% test dataset; the 75% train data is further split into 60% for training and 40% for validation. The ML model is then applied on 25% of unseen data for prediction.")
+            "The data model is split in 75% train and 25% test dataset; the 75% train data is further split into 60% "
+            "for training and 40% for validation. The ML model is then applied on 25% of unseen data for prediction.")
+
         bool_learn = st.checkbox("Learn the Model:", value=True)
         if bool_learn:
+            df_25 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok7oN74-f1eTi8BFw?e=yei0ZH")
+            df_75 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok6rtmFtgqn1vUt_Q?e=el633O")
+
             # defining predictor and response variables
             st.subheader("Training Report")
-            df_75 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok6rtmFtgqn1vUt_Q?e=el633O")
-            # df_75['MATERIAL_ENCO'] =le_material.fit_transform(df_75['MATERIAL'])
             Pred = df_75[features].drop(['ID', 'Breaks_No'], axis=1)
             Resp = df_75.Breaks_No
             Pred_train, Pred_test, Resp_train, Resp_test = train_test_split(Pred, Resp, test_size=0.4, random_state=0)
-            from sklearn.tree import DecisionTreeRegressor
 
             regressor = DecisionTreeRegressor(random_state=0)
             regressor.fit(Pred_train, Resp_train)
@@ -1554,28 +1193,20 @@ if selected == "Pipe-Break Prediction":
             st.write(report_train_df)
 
             st.subheader("Testing Report")
-            df_25 = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok7oN74-f1eTi8BFw?e=yei0ZH")
             X_4test = df_25[features].drop(['ID', 'Breaks_No'], axis=1)
             yReal_4test = df_25.Breaks_No
             yPrediction_4test = regressor.predict(X_4test)  # Prediction on unseen test data
             report_test_df = get_classification_report(yReal_4test, yPrediction_4test)
             st.write(report_test_df)
-            # st.write(reg.predict(input_reg))
-
-            # UD_Predictors = pd.DataFrame(UD_features)
-            # UD_PredictedBreaks = regressor.predict(UD_Predictors)
 
     with col2:
         st.header("3. Enter Data")
         predi_bool = st.button("Predict number of breaks")
 
-        # DataEntry_CheckBox = st.checkbox("Show Data-entry Fields")
-        # if DataEntry_CheckBox:
-        st.write(
+        st.caption(
             "Enter values for selected features to predict number of breaks based on the machine learnt algorithm.")
         if Dia_CheckBox:
             UD_Dia_in = st.selectbox('Select Diameter (in)', [4, 6, 8, 10, 12, 14, 16], index=1)
-            # UD_Dia_in.as_type(int)
             UD_features.append(UD_Dia_in)
             UD_names.append('Diameter')
 
@@ -1609,8 +1240,7 @@ if selected == "Pipe-Break Prediction":
             UD_features.append(UD_Age)
             UD_names.append('Age')
 
-        input_reg = np.array(UD_features)
-        input_reg = input_reg.reshape(1, -1)
+        input_reg = np.array(UD_features).reshape(1, -1)
 
     with col3:
         st.header("Predicted Break(s):")
@@ -1629,131 +1259,104 @@ if selected == "Pipe-Break Prediction":
 
 
 if selected == "Water Network Management":
-    st.title(selected)
-    km_df = pd.DataFrame()
-    features1 = ['ID', 'Breaks_No']
-    df_pipe = load_pipe("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
     df_pipe_orig = df_pipe.drop("FID", axis=1)
+    st.title(selected)
+
+    km_df = pd.DataFrame()
+    features = ['ID', 'Breaks_No']
+
     with st.sidebar:
         st.header(':gear: Settings')
 
         # Input Present Year for Calculating Age
-        st.subheader("Year settings")
-        year = st.number_input("Current year for calculating age", value=2022)
+        year = st.number_input("Select year for age calculation:", value=2022)
         df_pipe_orig['Age'] = (year - df_pipe_orig['Install_ye'])
 
         st.subheader('Select features')
-        # SELECT FEATURES FOR Classification
 
+        # SELECT FEATURES FOR Classification
         col1, col2 = st.columns((1, 1))
         with col1:
             Dia_CheckBox = st.checkbox("Diameter", value=True)
             if Dia_CheckBox:
-                features1.append('Diameter')
+                features.append('Diameter')
 
             Len_CheckBox = st.checkbox("Length", value=True)
             if Len_CheckBox:
-                features1.append('LENGTH_FT')
+                features.append('LENGTH_FT')
 
             Cus_CheckBox = st.checkbox("No of Customers", value=True)
             if Cus_CheckBox:
-                features1.append('Ncustomers')
+                features.append('Ncustomers')
 
-        with col2:
             Dis_CheckBox = st.checkbox("Discharge", value=True)
             if Dis_CheckBox:
-                features1.append('Qmax_gpm')
+                features.append('Qmax_gpm')
 
+        with col2:
             Pre_CheckBox = st.checkbox("Pressure", value=True)
             if Pre_CheckBox:
-                features1.append('Pmax_Psi')
+                features.append('Pmax_Psi')
 
             Sph_CheckBox = st.checkbox("Bed-Soil pH", value=True)
             if Sph_CheckBox:
-                features1.append('PH')
+                features.append('PH')
 
             Age_CheckBox = st.checkbox("Age", value=True)
             if Age_CheckBox:
-                features1.append('Age')
+                features.append('Age')
 
         # Reading Original Dataframe with Selected Features
-        km_df = df_pipe_orig[features1]
+        km_df = df_pipe_orig[features]
 
         # handling outliers and scaling features
         scaler = MinMaxScaler()
+
         # scaling breaks
         km_df['Scaled Breaks'] = scaler.fit_transform(km_df[['Breaks_No']])
 
         features_pca = ['Scaled Breaks']
 
+        def scale_feature(data, column_name, column_name_output, quantile, features, coef1, cpef2):
+            IQR_Dia = data[column_name].quantile(1-quantile) - data[column_name].quantile(quantile)
+            lower_bound = data[column_name].quantile(quantile) - (IQR_Dia * coef1)
+            upper_bound = data[column_name].quantile(quantile) + (IQR_Dia * cpef2)
+            data.loc[data[column_name] <= lower_bound, column_name] = lower_bound
+            data.loc[data[column_name] >= upper_bound, column_name] = upper_bound
+            data[column_name_output] = scaler.fit_transform(data[[column_name]])
+            features.append(column_name)
+            return data, features
+
         if Dia_CheckBox:
-            IQR_Dia = km_df.Diameter.quantile(0.75) - km_df.Diameter.quantile(0.25)
-            lower_diameter = km_df['Diameter'].quantile(0.25) - (IQR_Dia * 1.5)
-            upper_diameter = km_df['Diameter'].quantile(0.25) + (IQR_Dia * 3)
-            km_df.loc[km_df['Diameter'] <= lower_diameter, 'Diameter'] = lower_diameter
-            km_df.loc[km_df['Diameter'] >= upper_diameter, 'Diameter'] = upper_diameter
-            km_df['Scaled Diameter'] = scaler.fit_transform(km_df[['Diameter']])
-            features_pca.append('Diameter')
+            km_df, features_pca = scale_feature(km_df, 'Diameter', 'Scaled Diameter', 0.25, features_pca, 1.5, 3)
+
         if Len_CheckBox:
-            IQR_Len = km_df.LENGTH_FT.quantile(0.75) - km_df.LENGTH_FT.quantile(0.25)
-            lower_length = km_df['LENGTH_FT'].quantile(0.25) - (IQR_Len * 1.5)
-            upper_length = km_df['LENGTH_FT'].quantile(0.25) + (IQR_Len * 1.5)
-            km_df.loc[km_df['LENGTH_FT'] <= lower_length, 'LENGTH_FT'] = lower_length
-            km_df.loc[km_df['LENGTH_FT'] >= upper_length, 'LENGTH_FT'] = upper_length
-            km_df['Scaled Length'] = scaler.fit_transform(km_df[['LENGTH_FT']])
-            features_pca.append('Scaled Length')
+            km_df, features_pca = scale_feature(km_df, 'LENGTH_FT', 'Scaled Length', 0.25, features_pca, 1.5, 1.5)
+
         if Cus_CheckBox:
-            IQR_Cus = km_df.Ncustomers.quantile(0.75) - km_df.Ncustomers.quantile(0.25)
-            lower_customer = km_df['Ncustomers'].quantile(0.25) - (IQR_Cus * 3)
-            upper_customer = km_df['Ncustomers'].quantile(0.25) + (IQR_Cus * 3)
-            km_df.loc[km_df['Ncustomers'] <= lower_customer, 'Ncustomers'] = lower_customer
-            km_df.loc[km_df['Ncustomers'] >= upper_customer, 'Ncustomers'] = upper_customer
-            km_df['Scaled No of Customers'] = scaler.fit_transform(km_df[['Ncustomers']])
-            features_pca.append('Scaled No of Customers')
+            km_df, features_pca = scale_feature(km_df, 'Ncustomers', 'Scaled No of Customers', 0.25, features_pca, 3, 3)
+
         if Dis_CheckBox:
-            IQR_GPM = km_df.Qmax_gpm.quantile(0.75) - km_df.Qmax_gpm.quantile(0.25)
-            lower_gpm = km_df['Qmax_gpm'].quantile(0.25) - (IQR_GPM * 1.5)
-            upper_gpm = km_df['Qmax_gpm'].quantile(0.25) + (IQR_GPM * 1.5)
-            km_df.loc[km_df['Qmax_gpm'] <= lower_gpm, 'Qmax_gpm'] = lower_gpm
-            km_df.loc[km_df['Qmax_gpm'] >= upper_gpm, 'Qmax_gpm'] = upper_gpm
-            km_df['Scaled Discharge'] = scaler.fit_transform(km_df[['Qmax_gpm']])
-            features_pca.append('Scaled Discharge')
+            km_df, features_pca = scale_feature(km_df, 'Qmax_gpm', 'Scaled Discharge', 0.25, features_pca, 1.5, 1.5)
+
         if Pre_CheckBox:
-            IQR_PSI = km_df.Pmax_Psi.quantile(0.75) - km_df.Pmax_Psi.quantile(0.25)
-            lower_psi = km_df['Pmax_Psi'].quantile(0.25) - (IQR_PSI * 1.5)
-            upper_psi = km_df['Pmax_Psi'].quantile(0.25) + (IQR_PSI * 1.5)
-            km_df.loc[km_df['Pmax_Psi'] <= lower_psi, 'Pmax_Psi'] = lower_psi
-            km_df.loc[km_df['Pmax_Psi'] >= upper_psi, 'Pmax_Psi'] = upper_psi
-            km_df['Scaled Pressure'] = scaler.fit_transform(km_df[['Pmax_Psi']])
-            features_pca.append('Scaled Pressure')
+            km_df, features_pca = scale_feature(km_df, 'Pmax_Psi', 'Scaled Pressure', 0.25, features_pca, 1.5, 1.5)
+
         if Sph_CheckBox:
-            IQR_PH = km_df.PH.quantile(0.75) - km_df.PH.quantile(0.25)
-            lower_ph = km_df['PH'].quantile(0.25) - (IQR_PH * 1.5)
-            upper_ph = km_df['PH'].quantile(0.25) + (IQR_PH * 1.5)
-            km_df.loc[km_df['PH'] <= lower_ph, 'PH'] = lower_ph
-            km_df.loc[km_df['PH'] >= upper_ph, 'PH'] = upper_ph
-            km_df['Scaled Bed-Soil pH'] = scaler.fit_transform(km_df[['PH']])
-            features_pca.append('Scaled Bed-Soil pH')
+            km_df, features_pca = scale_feature(km_df, 'PH', 'Scaled Bed-Soil pH', 0.25, features_pca, 1.5, 1.5)
+
         if Age_CheckBox:
-            IQR_Age = km_df.Age.quantile(0.75) - km_df.Age.quantile(0.25)
-            lower_age = km_df['Age'].quantile(0.25) - (IQR_Age * 3)
-            upper_age = km_df['Age'].quantile(0.25) + (IQR_Age * 3)
-            km_df.loc[km_df['Age'] <= lower_age, 'Age'] = lower_age
-            km_df.loc[km_df['Age'] >= upper_age, 'Age'] = upper_age
-            km_df['Scaled Age'] = scaler.fit_transform(km_df[['Age']])
-            features_pca.append('Scaled Age')
-        # writing success message
+            km_df, features_pca = scale_feature(km_df, 'Age', 'Scaled Age', 0.25, features_pca, 3, 3)
+
         st.success("Outliers handled and features scaled successfully.")
 
     if st.checkbox("Show Raw Data"):
         with st.spinner('Writing in progress...'):
             st.write(df_pipe)
-        st.success('Done!')
 
     if st.checkbox("Show Transformed Data"):
         with st.spinner('Writing in progress...'):
             st.write(km_df.sort_values('Breaks_No', axis=0, ascending=False))
-        st.success('Done!')
 
     if st.button("Run Clustering Algorithm"):
         # dataframe for pca and kmeans
@@ -1763,116 +1366,55 @@ if selected == "Water Network Management":
         scores_pca = pca.fit_transform(km_df_transformed)
         km = KMeans(n_clusters=3, random_state=0)
         y_predict_clusters = km.fit_predict(scores_pca)
-
         km_df['Cluster'] = y_predict_clusters
 
-        Chart_Hist = alt.Chart(km_df).mark_bar(tooltip=True).encode(
-            alt.X('Cluster:O'),
-            y='count()',
-            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
-        ).properties(
-            height = 200,
-            width=200).interactive()
-        st.write(Chart_Hist)
+        def def_bar_chart(data, x, y, sort_x, sort_y, height, width, scheme):
+            chart = alt.Chart(data).mark_bar(tooltip=True).encode(
+                x=alt.X(x, sort=sort_x),
+                y=alt.Y(y, sort=sort_y),
+                color=alt.Color(x, scale=alt.Scale(scheme=scheme))
+            ).properties(
+                height=height,
+                width=width).interactive()
+            return chart
 
-        ## Diameter Metal Nonmetal LENGTH_FT Breaks_No Age Ncustomers PH Pmax_Psi Qmax_gpm
-        ChartDia = alt.Chart(km_df).mark_boxplot(size=50, extent=0).encode(
-            x=alt.X('Cluster:O', sort='-y'),
-            y=alt.Y('Scaled Diameter:Q'),
-            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2')),
-        ).properties(
-            height = 200,
-            width=200).interactive()
-        line11 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
-            y=alt.Y('mean(Scaled Diameter):Q'),
-            x=alt.X('Cluster:O', title=None, sort='-y')
-        )
+        def def_box_chart(data, x, y, sort_x, sort_y, height, width, scheme, mark_boxplot_size, mark_boxplot_extent):
+            chart = alt.Chart(data).mark_boxplot(size=mark_boxplot_size, extent=mark_boxplot_extent).encode(
+                x=alt.X(x, sort=sort_x),
+                y=alt.Y(y, sort=sort_y),
+                color=alt.Color(x, scale=alt.Scale(scheme=scheme))
+            ).properties(
+                height=height,
+                width=width).interactive()
+            return chart
 
-        ChartLen = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
-            x=alt.X('Cluster:O', sort='-y'),
-            y=alt.Y('Scaled Length:Q'),
-            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
-        ).properties(
-            height = 200,
-            width=200).interactive()
-        line14 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
-            y=alt.Y('mean(Scaled Length):Q'),
-            x=alt.X('Cluster:O', title=None, sort='-y')
-        )
+        def def_line_chart(data, x, y, sort_x, sort_y, strokeWidth, color, point):
+            chart = alt.Chart(data).mark_line(strokeWidth=strokeWidth, color=color, point=point).encode(
+                x=alt.X(x, title=None, sort=sort_x),
+                y=alt.Y(y, sort = sort_y),
+            )
+            return chart
 
-        ChartBreak = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
-            x=alt.X('Cluster:O', sort='-y'),
-            y=alt.Y('Scaled Breaks:Q'),
-            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
-        ).properties(
-            height = 200,
-            width=200).interactive()
-        line15 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
-            y=alt.Y('mean(Scaled Breaks):Q'),
-            x=alt.X('Cluster:O', title=None, sort='-y')
-        )
+        st.write(def_bar_chart(km_df, 'Cluster:O', 'count()', 'x', 'y', 200, 200, 'dark2'))
 
-        ChartAge = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
-            x=alt.X('Cluster:O', sort='-y'),
-            y=alt.Y('Scaled Age:Q'),
-            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
-        ).properties(
-            height = 200,
-            width=200).interactive()
-        line16 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
-            y=alt.Y('mean(Scaled Age):Q'),
-            x=alt.X('Cluster:O', title=None, sort='-y')
-        )
+        boxDia = def_box_chart(km_df, 'Cluster:O', 'Scaled Diameter:Q', '-y', 'y', 200, 200, 'dark2', 50, 0)
+        boxLen = def_box_chart(km_df, 'Cluster:O', 'Scaled Diameter:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
+        boxBreak = def_box_chart(km_df, 'Cluster:O', 'Scaled Breaks:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
+        boxAge = def_box_chart(km_df, 'Cluster:O', 'Scaled Age:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
+        boxCust = def_box_chart(km_df, 'Cluster:O', 'Scaled No of Customers:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
+        boxPH = def_box_chart(km_df, 'Cluster:O', 'Scaled Bed-Soil pH:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
+        boxPmax = def_box_chart(km_df, 'Cluster:O', 'Scaled Pressure:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
+        boxQmax = def_box_chart(km_df, 'Cluster:O', 'Scaled Discharge:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
 
-        ChartCust = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
-            x=alt.X('Cluster:O', sort='-y'),
-            y=alt.Y('Scaled No of Customers:Q'),
-            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
-        ).properties(
-            height = 200,
-            width=200).interactive()
-        line17 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
-            y=alt.Y('mean(Scaled No of Customers):Q'),
-            x=alt.X('Cluster:O', title=None, sort='-y')
-        )
+        lineDia = def_line_chart(km_df, 'Cluster:O', 'mean(Scaled Diameter):Q', '-y', 'y', 1, 'black', True)
+        lineLen = def_line_chart(km_df, 'Cluster:O', 'mean(Scaled Length):Q', '-y', 'y', 1, 'black', True)
+        lineBreak = def_line_chart(km_df, 'Cluster:O', 'mean(Scaled Breaks):Q', '-y', 'y', 1, 'black', True)
+        lineAge = def_line_chart(km_df, 'Cluster:O', 'mean(Scaled Age):Q', '-y', 'y', 1, 'black', True)
+        lineCust = def_line_chart(km_df, 'Cluster:O', 'mean(Scaled No of Customers):Q', '-y', 'y', 1, 'black', True)
+        linePH = def_line_chart(km_df, 'Cluster:O', 'mean(Scaled Bed-Soil pH):Q', '-y', 'y', 1, 'black', True)
+        linePmax = def_line_chart(km_df, 'Cluster:O', 'mean(Scaled Pressure):Q', '-y', 'y', 1, 'black', True)
+        lineQmax = def_line_chart(km_df, 'Cluster:O', 'mean(Scaled Discharge):Q', '-y', 'y', 1, 'black', True)
 
-        ChartPH = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
-            x=alt.X('Cluster:O', sort='-y'),
-            y=alt.Y('Scaled Bed-Soil pH:Q'),
-            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
-        ).properties(
-            height = 200,
-            width=200).interactive()
-        line18 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
-            y=alt.Y('mean(Scaled Bed-Soil pH):Q'),
-            x=alt.X('Cluster:O', title=None, sort='-y')
-        )
-
-        ChartPmax = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
-            x=alt.X('Cluster:O', sort='-y'),
-            y=alt.Y('Scaled Pressure:Q'),
-            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
-        ).properties(
-            height = 200,
-            width=200).interactive()
-        line19 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
-            y=alt.Y('mean(Scaled Pressure):Q'),
-            x=alt.X('Cluster:O', title=None, sort='-y')
-        )
-
-        ChartQmax = alt.Chart(km_df).mark_boxplot(size=50, extent=0.5).encode(
-            x=alt.X('Cluster:O', sort='-y'),
-            y=alt.Y('Scaled Discharge:Q'),
-            color=alt.Color('Cluster:O', scale=alt.Scale(scheme='dark2'))
-        ).properties(
-            height = 200,
-            width=200).interactive()
-        line20 = alt.Chart(km_df).mark_line(strokeWidth=1, color='black', point=True).encode(
-            y=alt.Y('mean(Scaled Discharge):Q'),
-            x=alt.X('Cluster:O', title=None, sort='-y')
-        )
-
-        # st.altair_chart((ChartDia+line11 | ChartLen+line14 | ChartBreak+line15 | ChartAge+line16 | ChartCust+line17 | ChartPH+line18 | ChartPmax+line19 | ChartQmax+line20).resolve_scale(y='independent'))
-        st.altair_chart((
-                                    ChartDia + line11 | ChartLen + line14 | ChartBreak + line15 | ChartAge + line16 | ChartCust + line17 | ChartPH + line18 | ChartPmax + line19 | ChartQmax + line20).resolve_scale(
-            x='independent'))
+        st.altair_chart((boxDia + lineDia | boxLen + lineLen | boxBreak + lineBreak | boxAge + lineAge
+                         | boxCust + lineCust | boxPH + linePH | boxPmax + linePmax | boxQmax + lineQmax
+                         ).resolve_scale(x='independent'))
