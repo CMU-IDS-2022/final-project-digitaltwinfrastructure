@@ -4,8 +4,6 @@ import streamlit as st
 import base64
 import altair as alt
 import datetime
-#import pytz
-
 from streamlit_option_menu import option_menu
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
@@ -21,12 +19,9 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score, explained_variance_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.tree import DecisionTreeRegressor
-
 from operator import itemgetter
 
-
 st.set_page_config(layout="wide")
-
 
 # Functions
 # This function makes it possible to download the data from onedrive by creating a downloadable link
