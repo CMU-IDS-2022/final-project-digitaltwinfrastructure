@@ -1327,8 +1327,6 @@ if selected == "Water Network Management":
         if Age_CheckBox:
             km_df, features_pca = scale_feature(km_df, 'Age', 'Scaled Age', 0.25, features_pca, 3, 3)
 
-        st.success("Outliers handled and features scaled successfully.")
-
     if st.checkbox("Show Raw Data"):
         with st.spinner('Writing in progress...'):
             st.write(df_pipe)
