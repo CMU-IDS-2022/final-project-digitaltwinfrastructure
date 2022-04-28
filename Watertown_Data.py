@@ -212,6 +212,8 @@ def def_distribution_chart(data, selected_asset, x, y, color, legend, condition1
 
 # Main Code
 df = load("https://1drv.ms/u/s!AnhaxtVMqKpxgolL9YaQaQcQqgtxBQ?e=xRNBhX")
+df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
+
 df_org = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
 df_pipe = load("https://1drv.ms/u/s!AnhaxtVMqKpxgok-XtdjTGpjIUIW3w?e=6swM00")
