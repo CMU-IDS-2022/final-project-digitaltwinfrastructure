@@ -49,13 +49,13 @@ KMeans clustering is deployed for classifying pipes. There are a total of 1219 p
 
 ## Discussion
 ***Pipe Data Exploration***:
-![Diameter vs  Year of Installation](https://user-images.githubusercontent.com/98185275/165869717-502166d8-a36e-4959-82aa-40695a2ec55e.png)
+![Diameter vs  Year of Installation](https://user-images.githubusercontent.com/98185275/165870554-027c3862-0a16-4840-8cca-de0caefbbec6.png)
 Maximum pipes in the network are Ductile Iron and Cast Iron and they are older than 70 years. Hence, these pipes are close to their theorotical life expectancy. 
-![Year of Installation vs  Sum of Pipe Breaks](https://user-images.githubusercontent.com/98185275/165869830-8f5dba95-064c-4907-a5b0-af9178724eb8.png)
+![Year of Installation vs  Sum of Pipe Breaks](https://user-images.githubusercontent.com/98185275/165870571-74b3396c-c4d8-44cd-bf81-a8bb22a58537.png)
 Maximum number of breaks are recorded in Ductile Iron and Cast Iron pipes which were installed before 1955.
-![Discharge vs  Installation year](https://user-images.githubusercontent.com/98185275/165869898-fc7477f1-7a6f-4352-aebb-05eb7a1b3b36.png)
+![Discharge vs  Installation year](https://user-images.githubusercontent.com/98185275/165870578-2e825685-55eb-478a-b3fb-249e167bec17.png)
 Significant amount of discharge is carried by the Ductile/Cast Iron pipes installed before 1955, which are more prone to breaks. The network reliability is lower as these pipes affect significant number of consuers.
-![Bed Soil pH vs  Sum of Pipe Breaks](https://user-images.githubusercontent.com/98185275/165870036-7ef1b1c0-9ec6-4fd2-a36d-cab016cbc27f.png)
+![Bed Soil pH vs  Sum of Pipe Breaks](https://user-images.githubusercontent.com/98185275/165870587-09ba82e8-c19c-4ff4-9ed3-49de7ba86eaa.png)
 Most of the breaks are observed in the pipes which are burried in the soils with pH<6. As lower pH indicates higher acidity in the soils, the corrosion rate of the pipe material in these soils is more.
 
 ***Pipe-Breaks Prediction***:
