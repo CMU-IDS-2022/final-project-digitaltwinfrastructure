@@ -49,7 +49,7 @@ KMeans clustering is deployed for classifying pipes. There are a total of 1219 p
 
 ## Discussion
 ***Pipe Data Exploration***:
-![Diameter vs  Year of Installation](https://user-images.githubusercontent.com/98185275/165870554-027c3862-0a16-4840-8cca-de0caefbbec6.png)
+![Diameter vs  Year of Installation](https://user-images.githubusercontent.com/98185275/165871302-0901ea2b-abed-4093-85ff-9e16a0d9ee7c.png)
 Maximum pipes in the network are Ductile Iron and Cast Iron and they are older than 70 years. Hence, these pipes are close to their theorotical life expectancy. 
 ![Year of Installation vs  Sum of Pipe Breaks](https://user-images.githubusercontent.com/98185275/165870571-74b3396c-c4d8-44cd-bf81-a8bb22a58537.png)
 Maximum number of breaks are recorded in Ductile Iron and Cast Iron pipes which were installed before 1955.
