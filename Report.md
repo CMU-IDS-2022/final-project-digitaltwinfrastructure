@@ -1,19 +1,19 @@
 # Final Project Report
 
-**Project URL**: TODO
+**Project URL**: https://share.streamlit.io/cmu-ids-2022/final-project-digitaltwinfrastructure/main/Streamlit_app.py
+
 **Video URL**: TODO
+
 **Project Team Members**: Devashri Karve, Maral Doctor Arastoo, Tanay Kulkarni
 
 **Abstract**: 
-Every year water utilities worldwide spend millions of dollars on repairing and replacing water infrastructure assets. These aging assets result in many issues including but not limited to non-revenue water (NRW), leakages, etc. The subsurface (buried) assets such as pipes are also exposed to severe aging and the condition assessment of such inaccessible assets is challenging. Utilities face a major challenge to understand the inspection priority, predict breaks, or detect anomalies in consumption. This project tries to address these critical issues using a web interface that interactively visualizes sensed pressure, flow, and tank water levels, and pipe metadata viz., diameter, material, year of installation, number of reported breaks, etc. The web-app also uses advanced machine learning in the background to predict the future number of breaks on any given pipe sample and categorizes all the pipes to identify the inspection priority based on assessed condition.
+Every year water utilities worldwide spend millions of dollars on repairing and replacing water infrastructure assets. These aging assets result in many issues including but not limited to non-revenue water (NRW), leakages, etc. The subsurface (buried) assets such as pipes are also exposed to severe aging and the condition assessment of such inaccessible assets is challenging. Utilities face a major challenge to understand the inspection priority, predict breaks, or detect anomalies in consumption. This project tries to address these critical issues using a web interface that interactively visualizes sensed pressure, flow, and tank water levels, monthly water usage of customer and pipe metadata viz., diameter, material, year of installation, number of reported breaks, etc. The web-app also uses advanced machine learning in the background to predict the future number of breaks on any given pipe sample and categorizes all the pipes to identify the inspection priority based on assessed condition.
 
 ## Introduction
-
-
+This is an interactive web based application that reads data of water infrastrcutre assets such as pipe, customer consumption records, and sensor data from various assets such as tanks, valves and pumps. It enables user to derive insights about these data through five of its tabs using different kinds of visualizations. There are five tabs in this web app viz., Water Network Exploration, Water Usage Exploration, Pipe Data Exploration, Pipe-Break Prediction, and Water Network Management. 
 
 ## Related Work
 Many infrastructure software companies have started offering digital solutions for real time operations and maintenance of water infrastructure systems. These include, but are not limited to, Bentley Systems Inc., Autodesk Inc., Xylem Inc., etc. The cloud-based applications are accessible remotely from any device and greatly add value in terms of capital, time, and manpower investments for water utilities. The inspiration for this work comes from one such cloud-based application - Bentley OpenFlows WaterSight (https://www.bentley.com/en/products/product-line/hydraulics-and-hydrology-software/openflows-watersight) that provides a unified platform for Utility GIS, Hydraulic Modeling, SCADA (Supervisory Control and Data Acquisition) Systems, and Customer Information Systems. This 'digital twin' technology for smarter operations of water infrastructure systems is widely desirable by water utilities as it enables computation of present, historic, and forecasted performance for every asset within the system. A few of the advanced capabilities of this tool includes, managing system emergency response, detecting system anomalies, controlling pressures, managing energy use, identifying water loss/ flow, and elevating engineering and operations efficiency.
-
 
 ## Methods
 
@@ -23,15 +23,14 @@ Many infrastructure software companies have started offering digital solutions f
 
 
 ***Pipe Data Exploration***:
-The Pipe Data Exploration page in the application helps the user visualize feature data in an exploratory manner that establishes inter-feature correlation and generates useful insights.
-The raw pipe Dataframe has pipe features such as diameter, length, bed-soil pH, number of customers, discharge, pressure, age, and number of breaks. These features are used to create visualization charts that reveal more insights on these features. The user interface has a main "Charts" window and a sidebar. 
+The Pipe Data Exploration page in the application helps the user visualize feature data in an exploratory manner that establishes inter-feature correlation and generates useful insights. The raw pipe Dataframe has pipe features such as diameter, length, bed-soil pH, number of customers, discharge, pressure, age, and number of breaks. These features are used to create visualization charts that reveal more insights on these features. The user interface has a main "Charts" window and a sidebar. 
 
 ![PipeDataExploration_SettingsSidebar](https://user-images.githubusercontent.com/97647504/165863839-d44fa564-6229-4236-82e9-02c6b7a4fdac.png)
 
 The ‘settings’ on the sidebar allows to interactively change the units of various features and shift between US Customary and Systems International (SI) units. The chart on the main window responsively updates as per the set units. The 'Show Raw Data' checkbox below the "Data Tables" heading allows user to navigate through the raw data. The users can select multiple attributes of their interest and the application will show insightful charts thus enabling users to understand relations between various features.
 
 ***Pipe-Breaks Prediction***:
-This page allows the user to predict the number of breaks on any sample pipe based on the features (or sample data) that the user selects based on a ML algorithm. The page has a settings sidebar and a main "Pipe Break Prediction" window. Under the 'Settings' options the user can define the year for calculating 'Age' of the pipes and select the features interactively to train and test the model. On the main “Pipe-Break Prediction” window, under the “1. Data Tables” header, the user can look at the original raw data and the data only for user-selected features by checking “Show raw data” and “Show selected data” checkboxes. Under the “2. Machine Learning” header, the user can allow the app to train and learn the ML algorithm by checking the “Learn the Model:” checkbox. Upon selecting that checkbox, the model generates “Training Report” and “Testing Report” for the user to understand “how well?” the ML model performed. Based on the “accuracy score” interactively select or remove any feature and understand the influence of that feature on the model. Under the “3. Enter Data”, the user can enter the values of selected features from the “Select Feature” option under Settings in sidebar, and the ML model will predict the number of breaks when the user hits “Predict number of breaks” button above the data entry fields. The predicted number of breaks are shown under the “Predicted Break(s):” header on the extreme right of the window.
+This page allows the user to predict the number of breaks on any sample pipe based on the features (or sample data) that the user selects based on a ML algorithm. The page has a settings sidebar and a main "Pipe Break Prediction" window. Under the 'Settings' options the user can define the year for calculating 'Age' of the pipes and select the features interactively to train and test the model. On the main “Pipe-Break Prediction” window, under the “1. Data Tables” header, the user can look at the original raw data and the data only for user-selected features by checking “Show raw data” and “Show selected data” checkboxes. Under the “2. Machine Learning” header, the user can allow the app to train and learn the ML algorithm by checking the “Learn the Model:” checkbox. Upon selecting that checkbox, the model generates “Training Report” and “Testing Report” for the user to understand “how well?” the ML model performs. Based on the “accuracy score” interactively select or remove any feature and understand the influence of that feature on the model. Under the “3. Enter Data”, the user can enter the values of selected features from the “Select Feature” option under Settings in sidebar, and the ML model will predict the number of breaks when the user hits “Predict number of breaks” button above the data entry fields. The predicted number of breaks are shown under the “Predicted Break(s):” header on the extreme right of the window.
 
 ![PipeBreakPrediction_SettingsSidebar](https://user-images.githubusercontent.com/97647504/165863695-cfc48e12-1ab0-4680-8c30-3cd56a94d660.png)
 
@@ -49,25 +48,40 @@ KMeans clustering is deployed for classifying pipes. There are a total of 1219 p
 
 ## Discussion
 ***Pipe Data Exploration***:
+
 ![Diameter vs  Year of Installation](https://user-images.githubusercontent.com/98185275/165871302-0901ea2b-abed-4093-85ff-9e16a0d9ee7c.png)
-Maximum pipes in the network are Ductile Iron and Cast Iron and they are older than 70 years. Hence, these pipes are close to their theorotical life expectancy. 
+
+The above chart shows that maximum number of pipes in the network are Ductile Iron and Cast Iron and they are older than 70 years. Hence, these pipes are close to their theorotical life expectancy.
+
 ![Year of Installation vs  Sum of Pipe Breaks](https://user-images.githubusercontent.com/98185275/165870571-74b3396c-c4d8-44cd-bf81-a8bb22a58537.png)
-Maximum number of breaks are recorded in Ductile Iron and Cast Iron pipes which were installed before 1955.
+
+The above chart shows that maximum number of breaks are recorded in Ductile Iron and Cast Iron pipes which were installed before 1955.
+
 ![Discharge vs  Installation year](https://user-images.githubusercontent.com/98185275/165870578-2e825685-55eb-478a-b3fb-249e167bec17.png)
-Significant amount of discharge is carried by the Ductile/Cast Iron pipes installed before 1955, which are more prone to breaks. The network reliability is lower as these pipes affect significant number of consuers.
+
+The above chart shows that significant amount of discharge is carried by the Ductile/Cast Iron pipes installed before 1955, which are more prone to breaks. The network reliability is lower as these pipes affect significant number of consuers.
+
 ![Bed Soil pH vs  Sum of Pipe Breaks](https://user-images.githubusercontent.com/98185275/165870587-09ba82e8-c19c-4ff4-9ed3-49de7ba86eaa.png)
-Most of the breaks are observed in the pipes which are burried in the soils with pH<6. As lower pH indicates higher acidity in the soils, the corrosion rate of the pipe material in these soils is more.
+
+The above chart shows that most of the breaks are observed in the pipes which are burried in the soils with pH<6. As lower pH indicates higher acidity in the soils, the corrosion rate of the pipe material in these soils is more.
+
+These key insights gained from the exploratory analysis of pipe data can help the water utility better understand their network infrastructure in order to strategize key inspection schedules, replacement strategies, or any other maintenance/ repairs activities.
 
 ***Pipe-Breaks Prediction***:
 The selection of features to learn the model is flexible. The user can choose any/all the features and the app will show summary results for the model. This helps user understand the importance or role of various features to acieve more model accuracy. The year settings allow users to select any year as current year using which, the app calculates age of pipe to be used in the model. 
+
 ![ML Model building](https://user-images.githubusercontent.com/98185275/165872033-71444a94-471b-48c2-bf6b-e1dc668068fa.png)
+
 These features enable the user to dynamicaly understand the changes in ML model with changes in features, allowing them to easily choose a model with more accuracy.
 Once the model is created and tested, the app allows user to enter any values for the selected features to dynamically predict number of breaks for a pipe having those feature values.
+
 ![Dynamic Prediction](https://user-images.githubusercontent.com/98185275/165872193-e3289e47-c346-4345-b9b9-a0a1d200b7d9.png)
+
 This feature applies the learnt model on user entered set of predictor variable to predict the target variable.
 
 ***Water Network Management***:
 This tab enables user to visualize clustering results. The box plots show that the cluster number 1 (orange color) has pipes with higher length, more number of recorded breaks, comparitively (slightly) lower ages, more number of customers, burried in soils having lower pH(that is more corrosion rate), undergo higher water pressures and slightly lower water discharges. These clusters with common traits of pipes may help the user to interprete the potential risk of pipe condition deterioration/damage on pipe and decide the inspection priority accordingly.
+![visualization (1)](https://user-images.githubusercontent.com/98185275/165873542-aa344069-2480-4e02-bca3-c9456412d5d1.png)
 
 
 ## Future Work
