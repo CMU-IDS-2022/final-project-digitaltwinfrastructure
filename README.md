@@ -1,19 +1,19 @@
-# CMU Interactive Data Science Final Project
+# Water Infrastructure Data Visualization for Watertown City
 
 * **Online URL**: https://share.streamlit.io/cmu-ids-2022/final-project-digitaltwinfrastructure/main/Streamlit_app.py
 * **Team members**:
   * Contact person: 
+  * dkarve@andrew.cmu.edu
   * mdoctora@andrew.cmu.edu
   * tskulkar@andrew.cmu.edu
-  * dkarve@andrew.cmu.edu
 
-## Work distribution
+## Work Distribution
 * **Devashri Karve**:
 <ol>
  <li>Coordination with Bentley Systems Inc. and collection of the raw data.</li> 
  <li>Collaboration in writing the proposal, report, and drawing sketches and recording the video.</li>
   <li>Implementation of regression model.</li>
-  <li>Implementation of "Pipe exploartion tab".</li>
+  <li>Implementation of "Pipe Data Exploartion".</li>
 </ol>
  
 * **Maral Doctorarastoo**:
@@ -21,33 +21,45 @@
   <li>Collaboration in writing the proposal and drawing sketches and recording the video.</li>
   <li>Implementing the general structure of the streamlit app.</li>
   <li>Revising and organizing the streamlit code.</li>
-  <li>Implementation of "Water Network Exploration" and "Water usage Exploration" tabs.</li>
-  <li>Sharing streamlit app.</li>
-   <li>writing readme file.</li>
+  <li>Implementation of "Water Network Exploration" and "Water Usage Exploration" tabs.</li>
+   <li>Collaboration in writing report and readme file.</li>
 </ol>
 
 * **Tanay Kulkarni**:
 <ol>
   <li>Collaboration in writing the proposal and drawing sketches and recording the video.</li>
   <li>Implementation of clustering model.</li>
-  <li>Implementation of "Pipe break" and "Clustering" tabs.</li>
-  <li>Writing the report.</li>
+  <li>Implementation of "Pipe-Break Prediction" and "Water Network Management" tabs.</li>
+  <li>Collaboration in writing report and readme file.</li>
 </ol>
 
-## Deliverables
+## Abstract: 
+Every year water utilities worldwide spend millions of dollars on repairing and replacing water infrastructure assets. These aging assets result in many issues including but not limited to non-revenue water (NRW), leakages, etc. The subsurface (buried) assets such as pipes are also exposed to severe aging and the condition assessment of such inaccessible assets is challenging. Utilities face a major challenge to understand the inspection priority, predict breaks, or detect anomalies in consumption. This project tries to address these critical issues using a web interface that interactively visualizes sensed pressure, flow, and tank water levels, monthly water usage of customer and pipe metadata viz., diameter, material, year of installation, number of reported breaks, etc. The web-app also uses advanced machine learning in the background to predict the future number of breaks on any given pipe sample and categorizes all the pipes to identify the inspection priority based on assessed condition.
 
-### Proposal
+### Snapshots of Main Tabs
 
-- [ ] The URL at the top of this readme needs to point to your application online. It should also list the names of the team members.
-- [ ] A completed [proposal](Proposal.md). Each student should submit the URL that points to this file in their github repo on Canvas.
+* **Water Network Exploration Tab:**:
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/pictures/1.PNG)
 
-### Sketches
+* **Water Usage Tab:**:
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/pictures/2.PNG)
 
-- [ ] Develop sketches/prototype of your project.
+* **Pipe Data Exploration Tab:**:
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/pictures/3.PNG)
 
-### Final deliverables
+* **Pipe-Break Prediction Tab:**:
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/pictures/4.PNG)
 
-- [ ] All code for the project should be in the repo.
-- [ ] Update the **Online URL** above to point to your deployed project.
-- [ ] A detailed [project report](Report.md).  Each student should submit the URL that points to this file in their github repo on Canvas.
-- [ ] A 5 minute video demonstration.  Upload the video to this github repo and link to it from your report.
+* **Water Network Management Tab:**:
+![image](https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/pictures/5.PNG)
+
+### External Links
+* **Webpage**:
+https://share.streamlit.io/cmu-ids-2022/final-project-digitaltwinfrastructure/main/Streamlit_app.py
+
+* **Report**:
+https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/main/Report.md
+
+* **Video**:
+https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/7835633049c16a0f77698f392dd9bc2f86d31cb4/DigitalTwinInfrastructure.mp4
+
