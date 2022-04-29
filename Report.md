@@ -67,7 +67,7 @@ Once the model is created and tested, the app allows user to enter any values fo
 This feature applies the learnt model on user entered set of predictor variable to predict the target variable.
 
 ***Water Network Management***:
-
+This tab enables user to visualize clustering results. The box plots show that the cluster number 1 (orange color) has pipes with higher length, more number of recorded breaks, comparitively (slightly) lower ages, more number of customers, burried in soils having lower pH(that is more corrosion rate), undergo higher water pressures and slightly lower water discharges. These clusters with common traits of pipes may help the user to interprete the potential risk of pipe condition deterioration/damage on pipe and decide the inspection priority accordingly.
 
 
 ## Future Work
