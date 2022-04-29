@@ -1,15 +1,36 @@
 # CMU Interactive Data Science Final Project
 
-* **Online URL**: TODO
+* **Online URL**: https://share.streamlit.io/cmu-ids-2022/final-project-digitaltwinfrastructure/main/Streamlit_app.py
 * **Team members**:
-  * Contact person: TODO@andrew.cmu.edu
-  * TODO@andrew.cmu.edu
-  * TODO@andrew.cmu.edu
-  * TODO@andrew.cmu.edu
+  * Contact person: 
+  * mdoctora@andrew.cmu.edu
+  * tskulkar@andrew.cmu.edu
+  * dkarve@andrew.cmu.edu
 
 ## Work distribution
 
+Devashri Karve:
+Collaboration in writing the proposal and drawing sketches and recording the video
+Implementation of regression model
+Implementation of "Pipe exploartion tab"
+
+Maral Doctorarastoo:
+Collaboration in writing the proposal and drawing sketches and recording the video
+Implementing the general structure of the streamlit app.
+Revising and organizing the streamlit code
+Implementation of "Water Network Exploration" and "Water usage Exploration" tabs.
+Sharing streamlit app.
+writing read me file.
+
+Tanay Kulkarni:
+Collaboration in writing the proposal and drawing sketches.
+Implementation of clustering model
+Implementation of "Pipe break" and "Clustering" tabs.
+Writing the report.
+
+
 Update towards the end of the project.
+
 
 ## Deliverables
 
