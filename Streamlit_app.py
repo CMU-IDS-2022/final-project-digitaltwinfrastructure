@@ -1375,7 +1375,7 @@ if selected == "Water Network Management":
         st.write(def_bar_chart(km_df, 'Cluster:O', 'count()', 'x', 'y', 200, 200, 'dark2'))
 
         boxDia = def_box_chart(km_df, 'Cluster:O', 'Scaled Diameter:Q', '-y', 'y', 200, 200, 'dark2', 50, 0)
-        boxLen = def_box_chart(km_df, 'Cluster:O', 'Scaled Diameter:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
+        boxLen = def_box_chart(km_df, 'Cluster:O', 'Scaled Length:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
         boxBreak = def_box_chart(km_df, 'Cluster:O', 'Scaled Breaks:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
         boxAge = def_box_chart(km_df, 'Cluster:O', 'Scaled Age:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
         boxCust = def_box_chart(km_df, 'Cluster:O', 'Scaled No of Customers:Q', '-y', 'y', 200, 200, 'dark2', 50, 0.5)
