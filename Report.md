@@ -45,6 +45,12 @@ KMeans clustering is deployed for classifying pipes. There are a total of 1219 p
 
 ## Results
 
+***Pipe-Break Prediction***
+The Decision Tree Regressor ML model performs fairly good in predicting the number of breaks with selected sets of features. The model, when all the features are selected bears a prediction accuracy of 67.5% on training dataset and 68.5% on testing dataset. This can be further improved by training the model on larger datasets and with more variety of data features. Additionally, a Random Forest Regressor can also be used in future to check any improvement in the accuracy.
+
+***KMeans Clustering***
+
+
 
 ## Discussion
 ***Pipe Data Exploration***:
