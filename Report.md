@@ -18,9 +18,14 @@ Many infrastructure software companies have started offering digital solutions f
 ## Methods
 
 ***Water Network Exploration***:
+In the "Water Network Exploration" the sensor readings of water level in tanks, flow in tanks and valves and pumps and also pressure at valves and pumps are explored. User can view the raw data by selecting the related checkbox. Using the settings the user can filter these data by selecting a "Start date" and "End date" and specifying the hour of these days. By checking the "Show filtered data" checkbox the user can see data in the specified time span. The filtered data is then used to plot time series of sensor readings. For each reading type selected in multiselect box a chart will be depicted that shows how the sensor reading of each asset changes over time. Also, a bar chart is used to show the average and standard deviation (using a tick mark) of the shown data. Using the settings user can change the unit of the chart to her desired unit to make have a better sense of values. As in some charts there might be a lot of assets, it has been made possible to hide some layers using the legend of the chart.
+
+By checking the "Distribution" checkbox a multiselect box appears. User can select variables of interest and for each variable three multiselect boxes appear. One of the multiselect boxes is used to choose assets of interest. For each selected asset a chart will be ploted that show how values change during the weeks of selected years and months. These distruibution charts are important in water network management as the decisions are made under uncertainty. Using this charts decision makers can decide for operation of water network with their desired confidence interval. The right-hand side histogram shows the distribution of data in all weeks of selected time span. User can filter specific times of week to explore the distribution say in times of highest demand. Using the radio button user can choose to see different colors for different years or months.
 
 ***Water Usage Exploration***:
+In the "Water Usage Exploration" the monthly water usage of the water network customers is explored. User can view the raw data by selecting the related checkbox. Using the multiselect boxes the user can filter based on years and months. The filtered data is used to plot monthly water usage of customers color coded based on the six zones of the city (see the legend). The barchart shows the average monthly water usage of customers of each zone. This chart is very insigtful as abrupt jumps in this chart can be a sign of possible pipe leakages in that zone. User can also filter the data using the scatter plot. 
 
+At the buttom of the page a pie chart is used that show the portion of each zone from total water usage in selected time span. A summary of zone characteristics is written on the right hand side of the page showing information about "Number of customers", "Highest monthly water usage" and "Month of highest usage". User can see the information of her zone of interest using the radio button. This chart helps the decision maker to decide for size of the tanks and power of the pumps in each zone by knowing the demand that each zone puts on the water netwrok.
 
 ***Pipe Data Exploration***:
 The Pipe Data Exploration page in the application helps the user visualize feature data in an exploratory manner that establishes inter-feature correlation and generates useful insights. The raw pipe Dataframe has pipe features such as diameter, length, bed-soil pH, number of customers, discharge, pressure, age, and number of breaks. These features are used to create visualization charts that reveal more insights on these features. The user interface has a main "Charts" window and a sidebar. 
@@ -46,10 +51,10 @@ KMeans clustering is deployed for classifying pipes. There are a total of 1219 p
 ## Results
 
 ***Pipe-Break Prediction***
-The Decision Tree Regressor ML model performs fairly good in predicting the number of breaks with selected sets of features. The model, when all the features are selected bears a prediction accuracy of 67.5% on training dataset and 68.5% on testing dataset. This can be further improved by training the model on larger datasets and with more variety of data features. Additionally, a Random Forest Regressor can also be used in future to check any improvement in the accuracy.
+The Decision Tree Regressor ML model performs fairly good in predicting the number of breaks with selected sets of features. The model, when all the features are selected bears a prediction accuracy of 68.5% on testing dataset. This can be further improved by training the model on larger datasets and with more variety of data features. Additionally, a Random Forest or other Regressions can also be used in future to check any improvement in the accuracy.
 
 ***KMeans Clustering***
-
+The pipes are divided into 3 clusters with similar traits. 
 
 
 ## Discussion
