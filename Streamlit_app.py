@@ -779,9 +779,9 @@ if selected == "Pipe Data Exploration":
 
         Pipe_ZoneLength_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X('ZONE', scale=alt.Scale(zero=True), sort='-y'),
-            alt.Y(f"mean({len_col_name}):Q", scale=alt.Scale(zero=True)),
+            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=True)),
             alt.Color('Material', legend=alt.Legend(title="Material")),
-            tooltip=['ZONE', f"mean({len_col_name}):Q", 'Material', 'count()']
+            tooltip=['ZONE', f"sum({len_col_name}):Q", 'Material', 'count()']
         ).properties(
             title=f"Zone vs. {len_col_name}",
             width=450, height=250
@@ -794,9 +794,9 @@ if selected == "Pipe Data Exploration":
         # plot the chart
         Pipe_Mat_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X(mat_col_name, type='nominal', scale=alt.Scale(zero=True), sort='-y'),
-            alt.Y(f"mean({len_col_name}):Q", scale=alt.Scale(zero=True)),
+            alt.Y(f"sum({len_col_name}):Q", scale=alt.Scale(zero=True)),
             alt.Color(mat_col_name, legend=alt.Legend(title="Material")),
-            tooltip=[mat_col_name, f"mean({len_col_name}):Q", 'count()']
+            tooltip=[mat_col_name, f"sum({len_col_name}):Q", 'count()']
         ).properties(
             title=f"Material vs. {len_col_name}",
             width=450, height=250
