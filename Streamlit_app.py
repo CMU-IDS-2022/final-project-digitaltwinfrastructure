@@ -832,7 +832,7 @@ if selected == "Pipe Data Exploration":
         # plot the chart
         Pipe_YOIDiameter_Histogram_Chart = alt.Chart(df_pipe).mark_bar(size=20).encode(
             alt.X(year_col_name, type='nominal', scale=alt.Scale(zero=False), sort='x'),
-            alt.Y('mean(Breaks_No):Q', scale=alt.Scale(zero=True), title="Mean of No. of Pipe Breaks"),
+            alt.Y('sum(Breaks_No):Q', scale=alt.Scale(zero=True), title="Sum of No. of Pipe Breaks"),
             alt.Color('Material', legend=alt.Legend(title="Material")),
             tooltip=[year_col_name, 'count()']
         ).properties(
