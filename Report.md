@@ -54,7 +54,7 @@ KMeans clustering is deployed for classifying pipes. There are a total of 1219 p
 The Decision Tree Regressor ML model performs fairly good in predicting the number of breaks with selected sets of features. The model, when all the features are selected bears a prediction accuracy of 68.5% on testing dataset. This can be further improved by training the model on larger datasets and with more variety of data features. Additionally, a Random Forest or other Regressions can also be used in future to check any improvement in the accuracy.
 
 ***KMeans Clustering***
-The optimum number of clusters identified by the Elbow Method is 3 pipes are divided into 3 clusters with similar traits. 
+The optimum number of clusters identified as 3 for this particular data by the Elbow Method. The pipes with similar traits are divided into 3 clusters using K-means clustering.  
 
 
 ## Discussion
