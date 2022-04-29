@@ -46,7 +46,17 @@ KMeans clustering is deployed for classifying pipes. There are a total of 1219 p
 
 ## Results
 
+
 ## Discussion
+***Pipe Data Exploration***:
+Maximum pipes in the network are Ductile Iron and Cast Iron and they are older than 70 years. Hence, these pipes are close to their theorotical life expectancy.
+
+
+***Pipe-Breaks Prediction***:
+
+
+***Water Network Management***:
+
 
 ## Future Work
 This project can be a good starting point towards a more sophisticated cloud application that can collected real-time data from utility systems such as SCADA. More work can be performed in the real-time visualization and monitoring space. Utility's Revenue Management System can be connected, and customer billing records can be accessed to predict the monthly or annual consumption and billing. A lot can also be done to handle water auditing and minimize NRW.
