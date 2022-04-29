@@ -10,7 +10,8 @@
 ## Work distribution
 * **Devashri Karve**:
 <ol>
-  <li>Collaboration in writing the proposal and drawing sketches and recording the video.</li>
+ <li>Coordination with Bentley Systems Inc. and collection of the raw data.</li> 
+ <li>Collaboration in writing the proposal, report, and drawing sketches and recording the video.</li>
   <li>Implementation of regression model.</li>
   <li>Implementation of "Pipe exploartion tab".</li>
 </ol>
