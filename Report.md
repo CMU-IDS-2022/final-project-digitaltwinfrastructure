@@ -2,7 +2,7 @@
 
 **Project URL**: https://share.streamlit.io/cmu-ids-2022/final-project-digitaltwinfrastructure/main/Streamlit_app.py
 
-**Video URL**: TODO
+**Video URL**: https://github.com/CMU-IDS-2022/final-project-digitaltwinfrastructure/blob/7835633049c16a0f77698f392dd9bc2f86d31cb4/DigitalTwinInfrastructure.mp4
 
 **Project Team Members**: Devashri Karve, Maral Doctor Arastoo, Tanay Kulkarni
 
