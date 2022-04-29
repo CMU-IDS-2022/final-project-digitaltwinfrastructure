@@ -8,29 +8,30 @@
   * dkarve@andrew.cmu.edu
 
 ## Work distribution
+* **Devashri Karve**:
+<ol>
+  <li>Collaboration in writing the proposal and drawing sketches and recording the video.</li>
+  <li>Implementation of regression model.</li>
+  <li>Implementation of "Pipe exploartion tab".</li>
+</ol>
+ 
+* **Maral Doctorarastoo**:
+<ol>
+  <li>Collaboration in writing the proposal and drawing sketches and recording the video.</li>
+  <li>Implementing the general structure of the streamlit app.</li>
+  <li>Revising and organizing the streamlit code.</li>
+  <li>Implementation of "Water Network Exploration" and "Water usage Exploration" tabs.</li>
+  <li>Sharing streamlit app.</li>
+   <li>writing readme file.</li>
+</ol>
 
-Devashri Karve:
-Collaboration in writing the proposal and drawing sketches and recording the video
-Implementation of regression model
-Implementation of "Pipe exploartion tab"
-
-Maral Doctorarastoo:
-Collaboration in writing the proposal and drawing sketches and recording the video
-Implementing the general structure of the streamlit app.
-Revising and organizing the streamlit code
-Implementation of "Water Network Exploration" and "Water usage Exploration" tabs.
-Sharing streamlit app.
-writing read me file.
-
-Tanay Kulkarni:
-Collaboration in writing the proposal and drawing sketches.
-Implementation of clustering model
-Implementation of "Pipe break" and "Clustering" tabs.
-Writing the report.
-
-
-Update towards the end of the project.
-
+* **Tanay Kulkarni**:
+<ol>
+  <li>Collaboration in writing the proposal and drawing sketches and recording the video.</li>
+  <li>Implementation of clustering model.</li>
+  <li>Implementation of "Pipe break" and "Clustering" tabs.</li>
+  <li>Writing the report.</li>
+</ol>
 
 ## Deliverables
 
