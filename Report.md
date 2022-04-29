@@ -19,14 +19,22 @@ Many infrastructure software companies have started offering digital solutions f
 
 ***Water Network Exploration***:
 In the "Water Network Exploration" the sensor readings of water level in tanks, flow in tanks and valves and pumps and also pressure at valves and pumps are explored. User can view the raw data by selecting the related checkbox. Using the settings the user can filter these data by selecting a "Start date" and "End date" and specifying the hour of these days. By checking the "Show filtered data" checkbox the user can see data in the specified time span. The filtered data is then used to plot time series of sensor readings. For each reading type selected in multiselect box a chart will be depicted that shows how the sensor reading of each asset changes over time. Also, a bar chart is used to show the average and standard deviation (using a tick mark) of the shown data. Using the settings user can change the unit of the chart to her desired unit to make have a better sense of values. As in some charts there might be a lot of assets, it has been made possible to hide some layers using the legend of the chart.
-![Maral](https://user-images.githubusercontent.com/97647504/165880071-61fa1420-cd1a-445d-acb0-8b1aded0a3ab.png)
 
+
+![maral2](https://user-images.githubusercontent.com/97647504/165880280-09a470ac-9b77-4dfe-a791-a5cf6b7a0349.jpeg)
+
+![maral4](https://user-images.githubusercontent.com/97647504/165880297-fe8d4e2f-1bb2-4448-b76c-bc823a6d4d24.jpeg)
 By checking the "Distribution" checkbox a multiselect box appears. User can select variables of interest and for each variable three multiselect boxes appear. One of the multiselect boxes is used to choose assets of interest. For each selected asset a chart will be ploted that show how values change during the weeks of selected years and months. These distruibution charts are important in water network management as the decisions are made under uncertainty. Using this charts decision makers can decide for operation of water network with their desired confidence interval. The right-hand side histogram shows the distribution of data in all weeks of selected time span. User can filter specific times of week to explore the distribution say in times of highest demand. Using the radio button user can choose to see different colors for different years or months.
 
 ***Water Usage Exploration***:
 In the "Water Usage Exploration" the monthly water usage of the water network customers is explored. User can view the raw data by selecting the related checkbox. Using the multiselect boxes the user can filter based on years and months. The filtered data is used to plot monthly water usage of customers color coded based on the six zones of the city (see the legend). The barchart shows the average monthly water usage of customers of each zone. This chart is very insigtful as abrupt jumps in this chart can be a sign of possible pipe leakages in that zone. User can also filter the data using the scatter plot. 
 
 ![Maral1](https://user-images.githubusercontent.com/97647504/165880043-b6d5eedb-09df-42aa-8a07-d3a6684c806c.png)
+
+
+
+![Maral](https://user-images.githubusercontent.com/97647504/165880071-61fa1420-cd1a-445d-acb0-8b1aded0a3ab.png)
+
 
 At the buttom of the page a pie chart is used that show the portion of each zone from total water usage in selected time span. A summary of zone characteristics is written on the right hand side of the page showing information about "Number of customers", "Highest monthly water usage" and "Month of highest usage". User can see the information of her zone of interest using the radio button. This chart helps the decision maker to decide for size of the tanks and power of the pumps in each zone by knowing the demand that each zone puts on the water netwrok.
 
