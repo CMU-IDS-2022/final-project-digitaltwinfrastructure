@@ -1,4 +1,4 @@
-# Final Project Report
+# Water Infrastructure Data Visualization for Watertown City
 
 **Project URL**: https://share.streamlit.io/cmu-ids-2022/final-project-digitaltwinfrastructure/main/Streamlit_app.py
 
