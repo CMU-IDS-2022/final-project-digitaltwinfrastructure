@@ -59,10 +59,15 @@ Significant amount of discharge is carried by the Ductile/Cast Iron pipes instal
 Most of the breaks are observed in the pipes which are burried in the soils with pH<6. As lower pH indicates higher acidity in the soils, the corrosion rate of the pipe material in these soils is more.
 
 ***Pipe-Breaks Prediction***:
-
-
+The selection of features to learn the model is flexible. The user can choose any/all the features and the app will show summary results for the model. This helps user understand the importance or role of various features to acieve more model accuracy. The year settings allow users to select any year as current year using which, the app calculates age of pipe to be used in the model. 
+![ML Model building](https://user-images.githubusercontent.com/98185275/165872033-71444a94-471b-48c2-bf6b-e1dc668068fa.png)
+These features enable the user to dynamicaly understand the changes in ML model with changes in features, allowing them to easily choose a model with more accuracy.
+Once the model is created and tested, the app allows user to enter any values for the selected features to dynamically predict number of breaks for a pipe having those feature values.
+![Dynamic Prediction](https://user-images.githubusercontent.com/98185275/165872193-e3289e47-c346-4345-b9b9-a0a1d200b7d9.png)
+This feature applies the learnt model on user entered set of predictor variable to predict the target variable.
 
 ***Water Network Management***:
+
 
 
 ## Future Work
